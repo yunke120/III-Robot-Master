@@ -1,3 +1,10 @@
 *.exe
 *.pro.user
 temp/
+repos/
+battery/
+log4qt/msvc64/bin/log4qt.dll
+msvc-build/
+!config.ini
+!log.ini
+!log4qt.dll
