@@ -8,3 +8,5 @@ msvc-build/
 !config.ini
 !log.ini
 !log4qt.dll
+*.zip
+video/opencv2/bin/

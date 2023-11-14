@@ -51,7 +51,7 @@ include ($$PWD/dashboard/dashboard.pri)
 include ($$PWD/statuswidget/statuswidget.pri)
 include ($$PWD/log4qt/log4qt.pri)
 include ($$PWD/sql/sql.pri)
-#include ($$PWD/video/video.pri)
+include ($$PWD/video/video.pri)
 include ($$PWD/protocol/protocol.pri)
 
 OTHER_FILES +=  README.md \

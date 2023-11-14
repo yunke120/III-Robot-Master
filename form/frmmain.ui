@@ -479,7 +479,7 @@
          <widget class="QWidget" name="page_a">
           <layout class="QGridLayout" name="gridLayout_6" rowstretch="10,10,1" columnstretch="4,1">
            <item row="0" column="0" rowspan="2">
-            <widget class="QWidget" name="widgetVideo" native="true">
+            <widget class="VideoOpenGLWidget" name="widgetVideo" native="true">
              <property name="styleSheet">
               <string notr="true">background-color: rgb(88, 88, 88);</string>
              </property>
@@ -1820,6 +1820,14 @@ qproperty-iconSize:20px 20px;
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>VideoOpenGLWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">./video/openglwidget/videoopenglwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../other/main.qrc"/>
  </resources>

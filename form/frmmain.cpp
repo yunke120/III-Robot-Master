@@ -212,6 +212,8 @@ void frmMain::buttonClick()
     } else if (name == "调试帮助") {
         ui->stackedWidget->setCurrentIndex(3);
     } else if (name == "用户退出") {
+        delete ui->widgetVideo; /* 手动调用析构函数 */
+        QThread::sleep(0.3);
         exit(0);
     }
 }
@@ -417,22 +419,20 @@ void frmMain::on_btnMenu_Close_clicked()
 
 void frmMain::on_btnOpenVideo_clicked()
 {
-    //    if(ui->btnOpenVideo->text() == "打开视频")
-    //    {
-    //        ui->btnOpenVideo->setText("关闭视频");
-    //        QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
-    //        QString videoaddr = settings.value("Config2/videoaddr").toString();
-    //        ui->widgetVideo->setAddr(videoaddr); // 网络流
-    ////        ui->widgetVideo->setAddr("rtsp://192.168.1.210/H264LiveStream"); // 本地视频文件
-    ////        ui->widgetVideo->setAddr("rtsp://192.168.2.119/554"); // 本地视频文件
-    ////        ui->widgetVideo->setAddr(0); // 本地摄像头
-    //        ui->widgetVideo->open();
-    //    }
-    //    else
-    //    {
-    //        ui->btnOpenVideo->setText("打开视频");
-    //        ui->widgetVideo->close();
-    //    }
+    if (ui->btnOpenVideo->text() == "打开视频") {
+        ui->btnOpenVideo->setText("关闭视频");
+        QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
+        QString videoaddr = settings.value("Config2/videoaddr").toString();
+        //        ui->widgetVideo->setAddr(videoaddr); // 网络流
+        //        ui->widgetVideo->setAddr("rtsp://192.168.1.210/H264LiveStream"); // 本地视频文件
+        //        ui->widgetVideo->setAddr("rtsp://192.168.2.119/554"); // 本地视频文件
+        ui->widgetVideo->setAddr(0); // 本地摄像头
+        ui->widgetVideo->setEnablePython(true);
+        ui->widgetVideo->open();
+    } else {
+        ui->btnOpenVideo->setText("打开视频");
+        ui->widgetVideo->close();
+    }
 }
 
 /**
