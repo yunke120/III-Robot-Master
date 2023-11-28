@@ -73,7 +73,9 @@ private:
                      QString &highColor);
 
     void appendDatat2LogWidget(const QList<QVariantMap> &data);
-    uint8_t checkNumber(uint8_t *data, unsigned char len);
+    uint8_t checkNumber(const char *data, unsigned char len);
+    void _sendCommand(eDEVICE device, unsigned char cmd);
+    void _sendCommand(eDEVICE device, unsigned char cmd, unsigned char *userdata, unsigned char len);
 private slots:
     void initForm();
     void initStyle();

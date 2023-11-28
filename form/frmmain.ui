@@ -387,7 +387,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>天空监控</string>
+             <string>预留</string>
             </property>
            </widget>
           </item>
@@ -400,7 +400,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>地面监控</string>
+             <string>视频监控</string>
             </property>
            </widget>
           </item>

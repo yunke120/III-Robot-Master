@@ -109,15 +109,69 @@ void frmMain::appendDatat2LogWidget(const QList<QVariantMap> &data)
     }
 }
 
-uint8_t frmMain::checkNumber(uint8_t *data, unsigned char len)
+uint8_t frmMain::checkNumber(const char *data, unsigned char len)
 {
-    unsigned char check_sum=0,k;
+    return std::accumulate(data, data + len, static_cast<uint8_t>(0), [](uint8_t acc, uint8_t val) {
+        return acc ^ val;
+    });
+}
 
-    for(k=0;k<len;k++)
-    {
-        check_sum=check_sum^data[k];
+void frmMain::_sendCommand(eDEVICE device, unsigned char cmd)
+{
+    if (!pSerial->isOpen()) {
+        pStatusWidget->setShowMessage("提示", "串口未打开");
+        pStatusWidget->start();
+        LogManager::instance().getLogger()->warn("串口设备未打开！");
+        return;
     }
-    return check_sum;
+    QByteArray send_msg(PROTOCOL_MSG_LEN, 0);
+    send_msg[0] = 0xAA;                                   // 帧头
+    send_msg[1] = device;                                 // 设备
+    send_msg[2] = cmd;                                    // 命令
+    send_msg[10] = checkNumber(send_msg.constData(), 10); //BBC校验位
+    send_msg[11] = static_cast<unsigned char>(0xDD);
+
+    QPushButton *clickedButton = qobject_cast<QPushButton *>(sender());
+
+    if (pSerial->write(send_msg.data(), 12) == -1) {
+        LogManager::instance().getLogger()->error("数据发送失败！(line=%1)",
+                                                  QString::number(__LINE__));
+    } else {
+        if (clickedButton) {
+            QString objectName = clickedButton->objectName();
+            LogManager::instance().getLogger()->info(objectName);
+        }
+    }
+}
+
+void frmMain::_sendCommand(eDEVICE device,
+                           unsigned char cmd,
+                           unsigned char *userdata,
+                           unsigned char len)
+{
+    if (!pSerial->isOpen()) {
+        pStatusWidget->setShowMessage("提示", "串口未打开");
+        pStatusWidget->start();
+        LogManager::instance().getLogger()->warn("串口设备未打开！");
+        return;
+    }
+
+    QByteArray send_msg(PROTOCOL_MSG_LEN, 0);
+    send_msg[0] = 0xAA;   // 帧头
+    send_msg[1] = device; // 设备
+    send_msg[2] = cmd;    // 命令
+    send_msg[3] = len;    // 帧长
+    std::copy(userdata, userdata + len, send_msg.begin() + 4);
+    send_msg[10] = checkNumber(send_msg.data(), 10); // BBC校验位
+    send_msg[11] = 0xDD;
+
+    QPushButton *clickedButton = qobject_cast<QPushButton *>(sender());
+    if (pSerial->write(send_msg.data(), 12) == -1) {
+        LogManager::instance().getLogger()->error("数据发送失败！(line=%1)",
+                                                  QString::number(__LINE__));
+    } else if (clickedButton) {
+        LogManager::instance().getLogger()->info(clickedButton->objectName());
+    }
 }
 
 void frmMain::initForm()
@@ -139,7 +193,7 @@ void frmMain::initForm()
     QFont font;
     font.setPixelSize(25);
     ui->labTitle->setFont(font);
-    ui->labTitle->setText(" 天地一体全息智能电网巡检系统");
+    ui->labTitle->setText(" III-Robot智能巡视终端");
     this->setWindowTitle(ui->labTitle->text());
 
     ui->stackedWidget->setStyleSheet("QLabel{font:16px;} QPushButton{font:16px;}");
@@ -285,7 +339,7 @@ void frmMain::leftMainClick()
         ui->stackedWidget2->setCurrentIndex(0);
     } else if (name == "天空监控") {
         ui->stackedWidget2->setCurrentIndex(1);
-    } else if (name == "地面监控") {
+    } else if (name == "视频监控") {
         ui->stackedWidget2->setCurrentIndex(2);
     } else if (name == "地图监控") {
         ui->stackedWidget2->setCurrentIndex(3);
@@ -580,28 +634,7 @@ void frmMain::slotConfigChange(int index)
  */
 void frmMain::on_btnRobotUp_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 预留位
-//    send_msg[2] = static_cast<unsigned char>(0x01); //
-//    send_msg[3] = static_cast<unsigned char>(0x00); //
-//    send_msg[4] = static_cast<unsigned char>(0x00); //
-//    send_msg[5] = static_cast<unsigned char>(0x00); //
-//    send_msg[6] = static_cast<unsigned char>(0x00); //
-//    send_msg[7] = static_cast<unsigned char>(0x00); //
-//    send_msg[8] = static_cast<unsigned char>(0x00); //
-//    send_msg[9] = static_cast<unsigned char>(0x00); //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    _sendCommand(Robot, Robot_Foreward);
 }
 
 /**
@@ -609,28 +642,7 @@ void frmMain::on_btnRobotUp_clicked()
  */
 void frmMain::on_btnRobotDown_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 预留位
-//    send_msg[2] = static_cast<unsigned char>(0x02); //
-//    send_msg[3] = static_cast<unsigned char>(0x00); //
-//    send_msg[4] = static_cast<unsigned char>(0x00); //
-//    send_msg[5] = static_cast<unsigned char>(0x00); //
-//    send_msg[6] = static_cast<unsigned char>(0x00); //
-//    send_msg[7] = static_cast<unsigned char>(0x00); //
-//    send_msg[8] = static_cast<unsigned char>(0x00); //
-//    send_msg[9] = static_cast<unsigned char>(0x00); //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    _sendCommand(Robot, Robot_Backward);
 }
 
 /**
@@ -638,28 +650,7 @@ void frmMain::on_btnRobotDown_clicked()
  */
 void frmMain::on_btnRobotLeft_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 预留位
-//    send_msg[2] = static_cast<unsigned char>(0x08); //
-//    send_msg[3] = static_cast<unsigned char>(0x00); //
-//    send_msg[4] = static_cast<unsigned char>(0x00); //
-//    send_msg[5] = static_cast<unsigned char>(0x00); //
-//    send_msg[6] = static_cast<unsigned char>(0x00); //
-//    send_msg[7] = static_cast<unsigned char>(0x00); //
-//    send_msg[8] = static_cast<unsigned char>(0x00); //
-//    send_msg[9] = static_cast<unsigned char>(0x00); //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    _sendCommand(Robot, Robot_Shift_Left);
 }
 
 /**
@@ -667,132 +658,27 @@ void frmMain::on_btnRobotLeft_clicked()
  */
 void frmMain::on_btnRobotRight_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 预留位
-//    send_msg[2] = static_cast<unsigned char>(0x07); //
-//    send_msg[3] = static_cast<unsigned char>(0x00); //
-//    send_msg[4] = static_cast<unsigned char>(0x00); //
-//    send_msg[5] = static_cast<unsigned char>(0x00); //
-//    send_msg[6] = static_cast<unsigned char>(0x00); //
-//    send_msg[7] = static_cast<unsigned char>(0x00); //
-//    send_msg[8] = static_cast<unsigned char>(0x00); //
-//    send_msg[9] = static_cast<unsigned char>(0x00); //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    _sendCommand(Robot, Robot_Shift_Right);
 }
 
 void frmMain::on_btnRobotLeftUp_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 预留位
-//    send_msg[2] = static_cast<unsigned char>(0x04); //
-//    send_msg[3] = static_cast<unsigned char>(0x00); //
-//    send_msg[4] = static_cast<unsigned char>(0x00); //
-//    send_msg[5] = static_cast<unsigned char>(0x00); //
-//    send_msg[6] = static_cast<unsigned char>(0x00); //
-//    send_msg[7] = static_cast<unsigned char>(0x00); //
-//    send_msg[8] = static_cast<unsigned char>(0x00); //
-//    send_msg[9] = static_cast<unsigned char>(0x00); //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    _sendCommand(Robot, Robot_Left_Up);
 }
 
 void frmMain::on_btnRobotRightUp_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 预留位
-//    send_msg[2] = static_cast<unsigned char>(0x03); //
-//    send_msg[3] = static_cast<unsigned char>(0x00); //
-//    send_msg[4] = static_cast<unsigned char>(0x00); //
-//    send_msg[5] = static_cast<unsigned char>(0x00); //
-//    send_msg[6] = static_cast<unsigned char>(0x00); //
-//    send_msg[7] = static_cast<unsigned char>(0x00); //
-//    send_msg[8] = static_cast<unsigned char>(0x00); //
-//    send_msg[9] = static_cast<unsigned char>(0x00); //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    _sendCommand(Robot, Robot_Right_Up);
 }
 
 void frmMain::on_btnRobotLeftDown_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 预留位
-//    send_msg[2] = static_cast<unsigned char>(0x06); //
-//    send_msg[3] = static_cast<unsigned char>(0x00); //
-//    send_msg[4] = static_cast<unsigned char>(0x00); //
-//    send_msg[5] = static_cast<unsigned char>(0x00); //
-//    send_msg[6] = static_cast<unsigned char>(0x00); //
-//    send_msg[7] = static_cast<unsigned char>(0x00); //
-//    send_msg[8] = static_cast<unsigned char>(0x00); //
-//    send_msg[9] = static_cast<unsigned char>(0x00); //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    _sendCommand(Robot, Robot_Left_Down);
 }
 
 void frmMain::on_btnRobotRightDown_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 预留位
-//    send_msg[2] = static_cast<unsigned char>(0x05); //
-//    send_msg[3] = static_cast<unsigned char>(0x00); //
-//    send_msg[4] = static_cast<unsigned char>(0x00); //
-//    send_msg[5] = static_cast<unsigned char>(0x00); //
-//    send_msg[6] = static_cast<unsigned char>(0x00); //
-//    send_msg[7] = static_cast<unsigned char>(0x00); //
-//    send_msg[8] = static_cast<unsigned char>(0x00); //
-//    send_msg[9] = static_cast<unsigned char>(0x00); //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    _sendCommand(Robot, Robot_Right_Down);
 }
 
 /**
@@ -800,100 +686,36 @@ void frmMain::on_btnRobotRightDown_clicked()
  */
 void frmMain::on_btnRobotStop_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 预留位
-//    send_msg[2] = static_cast<unsigned char>(0x00); //
-//    send_msg[3] = static_cast<unsigned char>(0x00); //
-//    send_msg[4] = static_cast<unsigned char>(0x00); //
-//    send_msg[5] = static_cast<unsigned char>(0x00); //
-//    send_msg[6] = static_cast<unsigned char>(0x00); //
-//    send_msg[7] = static_cast<unsigned char>(0x00); //
-//    send_msg[8] = static_cast<unsigned char>(0x00); //
-//    send_msg[9] = static_cast<unsigned char>(0x00); //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    _sendCommand(Robot, Robot_Backward);
 }
 
 void frmMain::on_btnRobotAccelerate_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    mDefaultVelocity += 1;
-//    if(mDefaultVelocity >= 10) mDefaultVelocity = 10;
-//    ui->labelRobotVelocity->setText(QString("%1m/s").arg(static_cast<double>(mDefaultVelocity/10.0), 3));
+    mDefaultVelocity += 1;
+    if (mDefaultVelocity >= 10)
+        mDefaultVelocity = 10;
+    ui->labelRobotVelocity->setText(
+        QString("%1m/s").arg(static_cast<double>(mDefaultVelocity / 10.0), 3));
 
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 设备地址
-//    send_msg[2] = static_cast<unsigned char>(0x20); // 命令字节
-//    send_msg[3] = static_cast<unsigned char>(0x02); // 用户数据长度
+    union UInt16Union data;
+    data.value = short(mDefaultVelocity / 10.0 * 1000);
 
-//    union UInt16Union data;
-//    data.value = short(mDefaultVelocity/10.0 * 1000);
-//    qDebug() << data.value;
-
-//    send_msg[4] = data.parts.lowByte; //
-//    send_msg[5] = data.parts.highByte; //
-//    send_msg[6] = 0; //
-//    send_msg[7] = 0; //
-//    send_msg[8] = 0; //
-//    send_msg[9] = 0; //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
-
+    unsigned char userdata[2] = {data.parts.lowByte, data.parts.highByte};
+    _sendCommand(Robot, RobotVelocity, userdata, 2);
 }
-
+//
 void frmMain::on_btnDecelerate_clicked()
 {
-//    if(!pSerial->isOpen())
-//    {
-//        pStatusWidget->setShowMessage("提示", "串口未打开");
-//        pStatusWidget->start();
-//        LogManager::instance().getLogger()->warn("串口设备未打开！");
-//        return;
-//    }
-//    mDefaultVelocity -= 1;
-//    if(mDefaultVelocity <= 0) mDefaultVelocity = 0;
-//    ui->labelRobotVelocity->setText(QString("%1m/s").arg(static_cast<double>(mDefaultVelocity/10.0), 3));
-//    qDebug() << mDefaultVelocity;
-//    uint8_t send_msg[12] = {0};
-//    send_msg[0] = static_cast<unsigned char>(0xAA); // 帧头
-//    send_msg[1] = static_cast<unsigned char>(0x01); // 设备地址
-//    send_msg[2] = static_cast<unsigned char>(0x20); // 命令字节
-//    send_msg[3] = static_cast<unsigned char>(0x02); // 用户数据长度
+    mDefaultVelocity -= 1;
+    if (mDefaultVelocity <= 0)
+        mDefaultVelocity = 0;
+    ui->labelRobotVelocity->setText(
+        QString("%1m/s").arg(static_cast<double>(mDefaultVelocity / 10.0), 3));
+    union UInt16Union data;
+    data.value = short(mDefaultVelocity / 10.0 * 1000);
 
-//    union UInt16Union data;
-//    data.value = short(mDefaultVelocity/10.0 * 1000);
-//    qDebug() << data.value;
-
-//    send_msg[4] = data.parts.lowByte; //
-//    send_msg[5] = data.parts.highByte; //
-//    send_msg[6] = 0; //
-//    send_msg[7] = 0; //
-//    send_msg[8] = 0; //
-//    send_msg[9] = 0; //
-//    send_msg[10] = static_cast<unsigned char>(checkNumber(send_msg, 10)); //BBC校验位
-//    send_msg[11] = static_cast<unsigned char>(0xDD);
-
-//    pSerial->write(reinterpret_cast<char *>(send_msg), 12);
+    unsigned char userdata[2] = {data.parts.lowByte, data.parts.highByte};
+    _sendCommand(Robot, RobotVelocity, userdata, 2);
 }
 
 /**
@@ -983,30 +805,27 @@ void frmMain::on_btnC2Cancel_clicked()
 
 void frmMain::on_btnC2Confirm_clicked()
 {
-//    QString port = ui->cbPorts->currentText();
-//    int databit = ui->cbDatas->currentIndex();
-//    int bandrate = ui->cbBandrate->currentIndex();
-//    int stopbit = ui->cbStops->currentIndex();
-//    int parity = ui->cbParity->currentIndex();
-//    QString videoaddr = ui->leVideoAddr->text();
+    QString port = ui->cbPorts->currentText();
+    int databit = ui->cbDatas->currentIndex();
+    int bandrate = ui->cbBandrate->currentIndex();
+    int stopbit = ui->cbStops->currentIndex();
+    int parity = ui->cbParity->currentIndex();
+    QString videoaddr = ui->leVideoAddr->text();
 
-//    QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
-//    settings.beginGroup("Config2");
-//    settings.setValue("port", port);
-//    settings.setValue("databit", QString::number(databit));
-//    settings.setValue("bandrate", QString::number(bandrate));
-//    settings.setValue("stopbit", QString::number(stopbit));
-//    settings.setValue("parity", QString::number(parity));
-//    settings.setValue("videoaddr", videoaddr);
-//    settings.endGroup();
-//    if(settings.status() != QSettings::NoError)
-//    {
-//        QMessageBox::warning(this, "警告", "设置保存失败");
-//    }
-//    else
-//    {
-//        QMessageBox::information(this, "提示", "保存成功");
-//    }
+    QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
+    settings.beginGroup("Config2");
+    settings.setValue("port", port);
+    settings.setValue("databit", QString::number(databit));
+    settings.setValue("bandrate", QString::number(bandrate));
+    settings.setValue("stopbit", QString::number(stopbit));
+    settings.setValue("parity", QString::number(parity));
+    settings.setValue("videoaddr", videoaddr);
+    settings.endGroup();
+    if (settings.status() != QSettings::NoError) {
+        QMessageBox::warning(this, "警告", "设置保存失败");
+    } else {
+        QMessageBox::information(this, "提示", "保存成功");
+    }
 }
 
 void frmMain::on_btnRefreshPort_clicked()
@@ -1022,41 +841,30 @@ void frmMain::on_btnRefreshPort_clicked()
 
 void frmMain::on_btnOpenSerial_clicked()
 {
-//    if(ui->btnOpenSerial->text() == "打开通信")
-//    {
-//        QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
-//        QString port = settings.value("Config2/port").toString();
-//        pSerial->setPortName(port);
-//        if(!pSerial->open(QIODevice::ReadWrite))
-//        {
-////            QMessageBox* msgBox = new QMessageBox(this);
+    if (ui->btnOpenSerial->text() == "打开通信") {
+        QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
+        QString port = settings.value("Config2/port").toString();
+        pSerial->setPortName(port);
+        if (!pSerial->open(QIODevice::ReadWrite)) {
+            pStatusWidget->setShowMessage("警告", pSerial->errorString());
+            pStatusWidget->start();
+            return;
+        }
+        ui->btnOpenSerial->setText("断开通信");
+        pDataTimer->start();
+        pStatusWidget->setShowMessage("提示", "打开串口成功");
+        pStatusWidget->start();
 
-////            msgBox->setAttribute(Qt::WA_DeleteOnClose);
-////            msgBox->setWindowTitle(tr("警告"));
-////            msgBox->setText(pSerial->errorString());
-////            msgBox->setIconPixmap(QPixmap(":/image/main_exit.png").scaled(100,100));
-////            QPushButton* yesButton = msgBox->addButton(tr("确认"), QMessageBox::AcceptRole);
-////            msgBox->setDefaultButton(yesButton);
-////            msgBox->exec();
-//            pStatusWidget->setShowMessage("警告", pSerial->errorString());
-//            pStatusWidget->start();
-//            return;
-//        }
-//        ui->btnOpenSerial->setText("断开通信");
-//        pDataTimer->start();
-//        pStatusWidget->setShowMessage("提示", "打开串口成功");
-//        pStatusWidget->start();
-
-//        LogManager::instance().getLogger()->info("打开串口成功");
-//    }
-//    else
-//    {
-//        if(!pSerial->isOpen()) return;
-//        pSerial->close();
-//        ui->btnOpenSerial->setText("打开通信");
-//        if(pDataTimer->isActive()) pDataTimer->stop();
-//        LogManager::instance().getLogger()->warn("关闭串口");
-//    }
+        LogManager::instance().getLogger()->info("打开串口成功");
+    } else {
+        if (!pSerial->isOpen())
+            return;
+        pSerial->close();
+        ui->btnOpenSerial->setText("打开通信");
+        if (pDataTimer->isActive())
+            pDataTimer->stop();
+        LogManager::instance().getLogger()->info("关闭串口");
+    }
 }
 
 
