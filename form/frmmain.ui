@@ -366,32 +366,6 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QToolButton" name="tbtnMain4">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>总览</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QToolButton" name="tbtnMain5">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>预留</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QToolButton" name="tbtnMain1">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -448,34 +422,6 @@
        </item>
        <item>
         <widget class="QStackedWidget" name="stackedWidget2">
-         <widget class="QWidget" name="page_d">
-          <layout class="QGridLayout" name="gridLayout_12">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_16">
-             <property name="text">
-              <string>总览</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="page_e">
-          <layout class="QGridLayout" name="gridLayout_13">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_15">
-             <property name="text">
-              <string>天空监控</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
          <widget class="QWidget" name="page_a">
           <layout class="QGridLayout" name="gridLayout_6" rowstretch="10,10,1" columnstretch="4,1">
            <item row="0" column="0" rowspan="2">
@@ -727,7 +673,30 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="page_b"/>
+         <widget class="QWidget" name="page_b">
+          <layout class="QGridLayout" name="gridLayout_12">
+           <item row="0" column="0">
+            <widget class="QPushButton" name="btnImportMap">
+             <property name="text">
+              <string>导入地图</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="pushButton">
+             <property name="text">
+              <string>发布任务</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="MapWidget" name="graphicsViewMap"/>
+           </item>
+           <item row="1" column="1">
+            <widget class="QTableWidget" name="tableWidget"/>
+           </item>
+          </layout>
+         </widget>
          <widget class="QWidget" name="page_c">
           <layout class="QGridLayout" name="gridLayout_15" rowstretch="1,1" columnstretch="1,1">
            <item row="0" column="0">
@@ -1826,6 +1795,11 @@ qproperty-iconSize:20px 20px;
    <extends>QWidget</extends>
    <header location="global">./video/openglwidget/videoopenglwidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MapWidget</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">map/map.h</header>
   </customwidget>
  </customwidgets>
  <resources>

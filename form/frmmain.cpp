@@ -2,9 +2,10 @@
 
 #include "frmmain.h"
 #include "ui_frmmain.h"
-#include "iconhelper.h"
-#include "quihelper.h"
-#include "log4qt/log.h"
+#include "core_base/iconhelper.h"
+#include "core_base/quihelper.h"
+
+
 
 frmMain::frmMain(QWidget *parent) : QWidget(parent), ui(new Ui::frmMain)
   ,mDefaultVelocity(5)
@@ -14,6 +15,7 @@ frmMain::frmMain(QWidget *parent) : QWidget(parent), ui(new Ui::frmMain)
     this->initStyle();
     this->initLeftMain();
     this->initLeftConfig();
+#if INIT
     this->initSerialPort();
     this->initLogSql();
     connect(ui->stackedWidget3, &QStackedWidget::currentChanged, this, &frmMain::slotConfigChange);
@@ -23,7 +25,10 @@ frmMain::frmMain(QWidget *parent) : QWidget(parent), ui(new Ui::frmMain)
                                      StatusWidget::LeaveDirection::BottomOut);
     pStatusWidget->setStyleSheet("QWidget{border-radius:10px}");
     pStatusWidget->hide();
+    connect(this, &frmMain::sig_ImportMap, ui->graphicsViewMap, &MapWidget::showMap);
+    connect(this, &frmMain::sigSetRobotPose, ui->graphicsViewMap, &MapWidget::slotSetRobotPose);
 
+#endif
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     qDebug() << "Qt6";
 #else
@@ -82,7 +87,7 @@ void frmMain::getQssColor(const QString &qss, QString &textColor, QString &panel
     getQssColor(qss, "DarkColorEnd:", darkColorEnd);
     getQssColor(qss, "HighColor:", highColor);
 }
-
+#if INIT
 void frmMain::appendDatat2LogWidget(const QList<QVariantMap> &data)
 {
     ui->logTableWidget->setRowCount(0);
@@ -173,7 +178,7 @@ void frmMain::_sendCommand(eDEVICE device,
         LogManager::instance().getLogger()->info(clickedButton->objectName());
     }
 }
-
+#endif
 void frmMain::initForm()
 {
     //设置无边框
@@ -276,8 +281,8 @@ void frmMain::initLeftMain()
 {
 //    iconsMain << 0xf030 << 0xf03e << 0xf247 << 0xe22d << 0xf1b9 ;
 //    btnsMain << ui->tbtnMain1 << ui->tbtnMain2 << ui->tbtnMain3 << ui->tbtnMain4 << ui->tbtnMain5;
-    iconsMain << 0xf030 << 0xf072 << 0xf1b9 << 0xf041 << 0xf247;
-    btnsMain << ui->tbtnMain4 << ui->tbtnMain5 <<ui->tbtnMain1 << ui->tbtnMain2 << ui->tbtnMain3 ;
+    iconsMain << 0xf030 << 0xf041 << 0xf247; // << 0xf030 << 0xf072
+    btnsMain << ui->tbtnMain1 << ui->tbtnMain2 << ui->tbtnMain3 ;
 
     int count = btnsMain.count();
     for (int i = 0; i < count; ++i) {
@@ -335,16 +340,12 @@ void frmMain::leftMainClick()
         btn->setChecked(btn == b);
     }
 
-    if(name == "总览"){
+    if(name == "视频监控"){
         ui->stackedWidget2->setCurrentIndex(0);
-    } else if (name == "天空监控") {
-        ui->stackedWidget2->setCurrentIndex(1);
-    } else if (name == "视频监控") {
-        ui->stackedWidget2->setCurrentIndex(2);
     } else if (name == "地图监控") {
-        ui->stackedWidget2->setCurrentIndex(3);
+        ui->stackedWidget2->setCurrentIndex(1);
     } else if (name == "设备监控") {
-        ui->stackedWidget2->setCurrentIndex(4);
+        ui->stackedWidget2->setCurrentIndex(2);
     }
 }
 void frmMain::leftConfigClick()
@@ -361,7 +362,7 @@ void frmMain::leftConfigClick()
     }
 
 }
-
+#if INIT
 void frmMain::initSerialPort()
 {
     pSerial = new QSerialPort(this);
@@ -444,7 +445,7 @@ void frmMain::initLogSql()
     ui->logTableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive);
     ui->logTableWidget->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
 }
-
+#endif
 void frmMain::on_btnMenu_Min_clicked()
 {
     showMinimized();
@@ -470,7 +471,7 @@ void frmMain::on_btnMenu_Close_clicked()
 {
     close();
 }
-
+#if INIT
 void frmMain::on_btnOpenVideo_clicked()
 {
     if (ui->btnOpenVideo->text() == "打开视频") {
@@ -895,3 +896,17 @@ void frmMain::on_btnGPU_clicked()
 
     QProcess::startDetached( command, params );
 }
+#endif
+
+void frmMain::on_btnImportMap_clicked()
+{
+    QString filename = QFileDialog::getOpenFileName(this,
+                                                    "Select Map",
+                                                    "./maps",
+                                                    "Map(*.pgm *png)");
+    // qDebug() << filename;
+    emit sig_ImportMap(filename);
+    // QPixmap pixmap(filename);
+    // ui->label_map->setPixmap(pixmap);
+}
+

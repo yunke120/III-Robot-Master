@@ -5,7 +5,9 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 
+#define INIT 1
 
+#if INIT
 // video
 //#include "video/widget/videowidget.h"
 
@@ -17,9 +19,9 @@
 #include "protocol/protocol.h"
 
 #include "dashboard/dashboard.h"
-
+#include "log4qt/log.h"
 #define CONFIG_FILEPATH "./config.ini"
-
+#endif
 class QAbstractButton;
 
 namespace Ui {
@@ -46,7 +48,7 @@ private:
 
     QList<int> iconsConfig;
     QList<QAbstractButton *> btnsConfig;
-
+#if INIT
     QSerialPort *pSerial;                       /* 串口对象 */
     StatusWidget *pStatusWidget;
     LoggerSql *plogSql;
@@ -55,8 +57,9 @@ private:
     QQueue<QByteArray> mRecvQueue;
     QByteArray AllArray; /* 串口接收数据缓存 */
 
-    int mDefaultVelocity; /* 使用double会出现浮点数的精度问题 */
 
+#endif
+    int mDefaultVelocity; /* 使用double会出现浮点数的精度问题 */
 private:
     //根据QSS样式获取对应颜色值
     QString borderColor;
@@ -71,11 +74,12 @@ private:
                      QString &normalColorStart, QString &normalColorEnd,
                      QString &darkColorStart, QString &darkColorEnd,
                      QString &highColor);
-
+#if INIT
     void appendDatat2LogWidget(const QList<QVariantMap> &data);
     uint8_t checkNumber(const char *data, unsigned char len);
     void _sendCommand(eDEVICE device, unsigned char cmd);
     void _sendCommand(eDEVICE device, unsigned char cmd, unsigned char *userdata, unsigned char len);
+#endif
 private slots:
     void initForm();
     void initStyle();
@@ -84,15 +88,16 @@ private slots:
     void initLeftConfig();
     void leftMainClick();
     void leftConfigClick();
+#if INIT
     void initSerialPort();
     void initConfig();
     void initLogSql();
-
+#endif
 private slots:
     void on_btnMenu_Min_clicked();
     void on_btnMenu_Max_clicked();
     void on_btnMenu_Close_clicked();
-
+#if INIT
     void slotSerialReadyRead();
     void slotDataTimerOut(void);
     void slotConfigChange(int index);
@@ -122,6 +127,12 @@ private slots:
     void on_btnDecelerate_clicked();
     void on_btnGPU_clicked();
     void on_btnOpenVideo_clicked();
+#endif
+    void on_btnImportMap_clicked();
+
+signals:
+    void sig_ImportMap(const QString &filepath);
+    void sigSetRobotPose(int x, int y, int w);
 };
 
 #endif // FRMMAIN_H

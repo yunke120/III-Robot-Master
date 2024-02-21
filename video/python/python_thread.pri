@@ -1,7 +1,7 @@
 
 
 #filename:     python_thread.pri 
-#time:         20231113-130930 
+#time:         20240221-161322 
 #author:       yunke120 
 
 HEADERS += $$PWD/pythonthread.h 
@@ -12,4 +12,4 @@ INCLUDEPATH += G:/MiniConda3/envs/yolo/Lib/site-packages/numpy/core/include/nump
 
 LIBS += -LG:/MiniConda3/envs/yolo/libs \ 
            -lpython3 \ 
-           -lpython311 \ 
+           -lpython310 \ 
