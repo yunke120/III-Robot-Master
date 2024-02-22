@@ -30,7 +30,8 @@ protected:
 public slots:
     void showMap(const QString &filepath);
     void slotSetRobotPose(int x, int y, int w);
-    void slotAddGoalPoint(QPointF);
+    // void slotAddGoalPoint(QPointF);
+    void slotSetGoalStatus(int id, GoalItem::GOALTYPE type);
 private:
     MapSence *pScene;
     QGraphicsPixmapItem *pixmapItem;
@@ -40,6 +41,9 @@ private:
     RobotItem *robotItem;
     QGraphicsPathItem *pathItem;
     QPainterPath robotPath;
+
+    QMap<int, GoalItem*> goalItemMap;
+    QList<QPointF> goalPointList;
 };
 
 

@@ -1,5 +1,8 @@
 #include "map.h"
 
+const QPointF g_GoalPoint[26] = {};
+
+
 /* 显示地图界面
  * 接收一个信号传递图片路径
  */
@@ -21,8 +24,12 @@ MapWidget::MapWidget(QWidget *parent) : QGraphicsView(parent), IsMove(false)
     pen.setWidth(2);
     pen.setColor(Qt::red);
     pathItem->setPen(pen);
-    pathItem->setBrush(QBrush(QColor(0, 160, 230)));
     pScene->addItem(pathItem);
+
+    goalPointList << QPointF(120,180) << QPointF(100,180) << QPointF(80,180) << QPointF(60,180) << QPointF(40,180)
+    << QPointF(40,140) << QPointF(60,140) << QPointF(80,140) << QPointF(100,140) << QPointF(120,140) << QPointF(140,140) << QPointF(160,140)
+    << QPointF(160,100) << QPointF(140,100) << QPointF(120,100) << QPointF(100,100) << QPointF(80,100) << QPointF(60,100) << QPointF(40,100)
+    << QPointF(40,60) << QPointF(60,60) << QPointF(80,60) << QPointF(100,60) << QPointF(120,60) << QPointF(140,60) << QPointF(160,60);
 }
 
 MapWidget::~MapWidget()
@@ -80,15 +87,28 @@ void MapWidget::mouseReleaseEvent(QMouseEvent *event)
 void MapWidget::showMap(const QString &filepath)
 {
     QPixmap pixmap(filepath);
+    int _w = pixmap.width()-200;
+    int _h = pixmap.height()-200;
     QPixmap rpixmap = pixmap.transformed(QTransform().rotate(180));
-    pixmapItem->setPos(0,0);
+    pixmapItem->setPos(-_w/2,-_h/2);
     pixmapItem->setPixmap(rpixmap);
 
     robotItem = new RobotItem;
-    robotItem->setPos(100,100);
+    robotItem->setPos(160,180);
     robotItem->setZValue(1);
+    robotItem->setAngle(180);
     pScene->addItem(robotItem);
-    robotPath.moveTo(0,0);
+    robotPath.moveTo(160,180);
+
+    goalItemMap.clear();
+    for(int id = 1; id <= 26; id++)
+    {
+        GoalItem *item = new GoalItem(id);
+        item->setZValue(1);
+        item->setPos(goalPointList.at(id-1));
+        pScene->addItem(item);
+        goalItemMap.insert(id, item);
+    }
 }
 
 void MapWidget::slotSetRobotPose(int x, int y, int w)
@@ -96,19 +116,14 @@ void MapWidget::slotSetRobotPose(int x, int y, int w)
     robotItem->setPos(x, y);
     robotItem->setAngle(w);
     robotPath.lineTo(x,y);
-    // pathItem->update();
     pathItem->setPath(robotPath);
-
-    QPointF p(x+10, y+10);
-    slotAddGoalPoint(p);
 }
 
-void MapWidget::slotAddGoalPoint(QPointF point)
+void MapWidget::slotSetGoalStatus(int id, GoalItem::GOALTYPE type)
 {
-    GoalItem *item =  new GoalItem;
-    item->setZValue(0);
-    item->setPos(point);
-    pScene->addItem(item);
+    goalItemMap.value(id)->setGoalType(type);
+    goalItemMap.value(id)->update();
+    // slotSetRobotPose(goalPointList.at(id).x(),goalPointList.at(id).y(), 180);
 }
 
 MapSence::MapSence(QObject *parent): QGraphicsScene(parent)

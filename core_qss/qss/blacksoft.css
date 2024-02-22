@@ -692,3 +692,13 @@ background:none;
 /*DarkColorStart:#646464*/
 /*DarkColorEnd:#525252*/
 /*HighColor:#AAAAAA*/
+
+
+QToolButton#tBConnect,QToolButton#tBBattery{
+border-radius:1px;
+color:#DCDCDC;
+padding:1px;
+margin:0px;
+background:none;
+border-style:none;
+}

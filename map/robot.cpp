@@ -53,7 +53,16 @@ void RobotItem::setAngle(int w)
 
 GoalItem::GoalItem(QGraphicsObject *parent)
     : QGraphicsObject(parent)
-    , m_Type(Undone)
+    , m_Type(None)
+    , m_ID(0)
+{
+
+}
+
+GoalItem::GoalItem(int id, QGraphicsObject *parent)
+    : QGraphicsObject(parent)
+    , m_Type(None)
+    , m_ID(id)
 {
 
 }
@@ -69,21 +78,37 @@ void GoalItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, 
 
     painter->setRenderHint(QPainter::Antialiasing, true);
 
-    if(m_Type == Undone)
+    if(m_Type == GOALTYPE::Undone)
     {
         painter->setPen(QColor(255,0,0));
         painter->setBrush(QBrush(QColor(255,0,0)));
     }
-    else if(m_Type == Done)
+    else if(m_Type == GOALTYPE::Done)
     {
         painter->setPen(QColor(0,255,0));
         painter->setBrush(QBrush(QColor(0,255,0)));
     }
+    else if(m_Type == GOALTYPE::None)
+    {
+        painter->setPen(QColor(217,217,217));
+        painter->setBrush(QBrush(QColor(217,217,217)));
+    }
 
     painter->drawEllipse(this->boundingRect());
+    painter->drawText(this->boundingRect(), QString::number(m_ID));
 }
 
-void GoalItem::slotSetGoalType(GOALTYPE type)
+void GoalItem::setGoalType(GOALTYPE type)
 {
     m_Type = type;
+}
+
+void GoalItem::setGoalID(int id)
+{
+    m_ID = id;
+}
+
+int GoalItem::getGoalID() const
+{
+    return m_ID;
 }

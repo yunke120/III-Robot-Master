@@ -15,5 +15,8 @@
         <file>image/refresh.png</file>
         <file>image/hint.png</file>
         <file>image/filter.png</file>
+        <file>image/bat.png</file>
+        <file>image/connect.png</file>
+        <file>image/disconnect.png</file>
     </qresource>
 </RCC>

@@ -40,15 +40,20 @@ class GoalItem : public QGraphicsObject
 public:
 
     enum GOALTYPE{
+        None,
         Done,
         Undone
     };
 
-    explicit GoalItem(QGraphicsObject *parent = nullptr);
+    GoalItem(QGraphicsObject *parent = nullptr);
+    GoalItem(int id = 0, QGraphicsObject *parent = nullptr);
 
     QRectF boundingRect() const ;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,QWidget *widget);
 
+    void setGoalType(GOALTYPE type);
+    void setGoalID(int id);
+    int  getGoalID() const;
 private:
 
     const int width = 6;
@@ -57,9 +62,7 @@ private:
     const int height_2 = height/2;
 
     GOALTYPE m_Type;
-
-public slots:
-    void slotSetGoalType(GOALTYPE type);
+    int m_ID;
 };
 
 

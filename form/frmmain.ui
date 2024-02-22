@@ -208,6 +208,53 @@
        </spacer>
       </item>
       <item>
+       <widget class="QToolButton" name="tBConnect">
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="text">
+         <string>未连接</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../other/main.qrc">
+          <normaloff>:/image/disconnect.png</normaloff>:/image/disconnect.png</iconset>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonTextBesideIcon</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="tBBattery">
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="text">
+         <string>80%</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../other/main.qrc">
+          <normaloff>:/image/bat.png</normaloff>:/image/bat.png</iconset>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonTextBesideIcon</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_21">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <widget class="QWidget" name="widgetMenu" native="true">
         <property name="minimumSize">
          <size>
@@ -693,7 +740,7 @@
             <widget class="MapWidget" name="graphicsViewMap"/>
            </item>
            <item row="1" column="1">
-            <widget class="QTableWidget" name="tableWidget"/>
+            <widget class="QTableWidget" name="tableWidgetTask"/>
            </item>
           </layout>
          </widget>
