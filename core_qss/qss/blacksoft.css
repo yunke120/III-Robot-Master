@@ -702,3 +702,48 @@ margin:0px;
 background:none;
 border-style:none;
 }
+
+QPushButton#btnRobotUp,QPushButton#btnRobotUp2{
+image:url(:/image/ptzup.png);
+min-height: 35px;
+}
+
+QPushButton#btnRobotDown,QPushButton#btnRobotDown2{
+image:url(:/image/ptzdown.png);
+min-height: 35px;
+}
+
+QPushButton#btnRobotLeft,QPushButton#btnRobotLeft2{
+image:url(:/image/ptzleft.png);
+min-height: 35px;
+}
+
+QPushButton#btnRobotRight,QPushButton#btnRobotRight2{
+image:url(:/image/ptzright.png);
+min-height: 35px;
+}
+
+QPushButton#btnRobotLeftUp,QPushButton#btnRobotLeftUp2{
+image:url(:/image/ptzleftup.png);
+min-height: 35px;
+}
+
+QPushButton#btnRobotLeftDown,QPushButton#btnRobotLeftDown2{
+image:url(:/image/ptzleftdown.png);
+min-height: 35px;
+}
+
+QPushButton#btnRobotRightUp,QPushButton#btnRobotRightUp2{
+image:url(:/image/ptzrightup.png);
+min-height: 35px;
+}
+
+QPushButton#btnRobotRightDown,QPushButton#btnRobotRightDown2{
+image:url(:/image/ptzrightdown.png);
+min-height: 35px;
+}
+
+QPushButton#btnRobotStop,QPushButton#btnRobotStop2{
+color: #CA5F5F;
+min-height: 35px;
+}

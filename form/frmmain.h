@@ -19,9 +19,13 @@
 #include "protocol/protocol.h"
 
 #include "dashboard/dashboard.h"
+#include "map/robot.h"
 #include "log4qt/log.h"
 #define CONFIG_FILEPATH "./config.ini"
 #endif
+
+#define IMAGE_HEIGHT   100
+
 class QAbstractButton;
 
 namespace Ui {
@@ -35,6 +39,7 @@ class frmMain : public QWidget
 public:
     explicit frmMain(QWidget *parent = nullptr);
     ~frmMain();
+        QStringList taskList;
 private:
     bool createFolder(const QString& folder);
 protected:
@@ -58,8 +63,8 @@ private:
     QByteArray AllArray; /* 串口接收数据缓存 */
 
 
+
 #endif
-    int mDefaultVelocity; /* 使用double会出现浮点数的精度问题 */
 private:
     //根据QSS样式获取对应颜色值
     QString borderColor;
@@ -76,6 +81,7 @@ private:
                      QString &highColor);
 #if INIT
     void appendDatat2LogWidget(const QList<QVariantMap> &data);
+    void appendData2ReportWidget(const QString &data1, const QImage &image);
     uint8_t checkNumber(const char *data, unsigned char len);
     void _sendCommand(eDEVICE device, unsigned char cmd);
     void _sendCommand(eDEVICE device, unsigned char cmd, unsigned char *userdata, unsigned char len);
@@ -92,6 +98,9 @@ private slots:
     void initSerialPort();
     void initConfig();
     void initLogSql();
+    void initMap();
+    void initReport();
+    void initHelp();
 #endif
 private slots:
     void on_btnMenu_Min_clicked();
@@ -123,16 +132,24 @@ private slots:
     void on_btnRobotRightUp_clicked();
     void on_btnRobotLeftDown_clicked();
     void on_btnRobotRightDown_clicked();
-    void on_btnRobotAccelerate_clicked();
-    void on_btnDecelerate_clicked();
+    // void on_btnRobotAccelerate_clicked();
+    // void on_btnDecelerate_clicked();
     void on_btnGPU_clicked();
     void on_btnOpenVideo_clicked();
-#endif
     void on_btnImportMap_clicked();
+    void on_btnAddGoalPoint_clicked();
+    void on_btnSaveTaskList_clicked();
+    void on_btnImportTaskList_clicked();
+    void on_btnExportReport_clicked();
+#endif
+
+
+    void on_btnRealTimeDetect_clicked(bool checked);
 
 signals:
     void sig_ImportMap(const QString &filepath);
     void sigSetRobotPose(int x, int y, int w);
+    void sigSetGoalStatus(int id, GoalItem::GOALTYPE type);
 };
 
 #endif // FRMMAIN_H

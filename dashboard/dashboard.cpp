@@ -161,7 +161,7 @@ void DashBoard::drawIndicator(QPainter *painter, qreal hlafWidth)
 
     painter->save();
     painter->translate(hlafWidth,hlafWidth/2*3);
-    QString text = QString("%1mm/s").arg(m_DashValue);
+    QString text = QString("%1cm/s").arg(m_DashValue);
     QFontMetrics fontMetrics(this->font());
     int textWidth = fontMetrics.horizontalAdvance(text);
     int x = - (textWidth>>1);

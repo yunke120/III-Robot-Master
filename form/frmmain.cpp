@@ -8,7 +8,6 @@
 
 
 frmMain::frmMain(QWidget *parent) : QWidget(parent), ui(new Ui::frmMain)
-  ,mDefaultVelocity(5)
 {
     ui->setupUi(this);
     this->initForm();
@@ -18,6 +17,9 @@ frmMain::frmMain(QWidget *parent) : QWidget(parent), ui(new Ui::frmMain)
 #if INIT
     this->initSerialPort();
     this->initLogSql();
+    this->initMap();
+    this->initReport();
+    this->initHelp();
     connect(ui->stackedWidget3, &QStackedWidget::currentChanged, this, &frmMain::slotConfigChange);
 
     pStatusWidget = new StatusWidget(this,
@@ -25,9 +27,6 @@ frmMain::frmMain(QWidget *parent) : QWidget(parent), ui(new Ui::frmMain)
                                      StatusWidget::LeaveDirection::BottomOut);
     pStatusWidget->setStyleSheet("QWidget{border-radius:10px}");
     pStatusWidget->hide();
-    connect(this, &frmMain::sig_ImportMap, ui->graphicsViewMap, &MapWidget::showMap);
-    connect(this, &frmMain::sigSetRobotPose, ui->graphicsViewMap, &MapWidget::slotSetRobotPose);
-
 #endif
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     qDebug() << "Qt6";
@@ -114,6 +113,78 @@ void frmMain::appendDatat2LogWidget(const QList<QVariantMap> &data)
     }
 }
 
+void frmMain::appendData2ReportWidget(const QString &data1, const QImage &image)
+{
+    int rowcount = ui->reportTableWidget->rowCount();
+    ui->reportTableWidget->insertRow(rowcount);
+#if 1
+    QTableWidgetItem *item1 = new QTableWidgetItem(QString::number(rowcount));
+    item1->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    ui->reportTableWidget->setItem(rowcount, 0, item1);
+
+    QTableWidgetItem *item2 = new QTableWidgetItem("室内变电柜巡检");
+    item2->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    ui->reportTableWidget->setItem(rowcount, 1, item2);
+
+    QDateTime cDateTime = QDateTime::currentDateTime();
+    QString cDateTimeStr = cDateTime.toString("yyyy-MM-dd hh:mm:ss");
+    QTableWidgetItem *item3 = new QTableWidgetItem(cDateTimeStr);
+    item3->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    ui->reportTableWidget->setItem(rowcount, 2, item3);
+
+
+    QTableWidgetItem *item4 = new QTableWidgetItem(data1);
+    item4->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    ui->reportTableWidget->setItem(rowcount, 3, item4);
+
+    QLabel *label5 = new QLabel;
+    label5->setTextFormat(Qt::MarkdownText);
+    label5->setWordWrap(true); // 设置自动换行
+    QString text =  "**PA**\n"\
+        "  - I1: 004.4\n"\
+        "  - I2: 000.0\n"\
+        "  - I3: 000.0\n";
+    label5->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    label5->setText(text);
+    ui->reportTableWidget->setCellWidget(rowcount, 4, label5);
+
+
+    QLabel *label6 = new QLabel();
+    label6->setPixmap(QPixmap::fromImage(image.scaled(IMAGE_HEIGHT, IMAGE_HEIGHT)));
+    label6->setAlignment(Qt::AlignHCenter);
+    ui->reportTableWidget->setCellWidget(rowcount, 5, label6);
+
+    QTableWidgetItem *item7 = new QTableWidgetItem("正常");
+    item7->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    ui->reportTableWidget->setItem(rowcount, 6, item7);
+
+    // QLabel *label8 = new QLabel;
+    // label8->setTextFormat(Qt::MarkdownText);
+    // label8->setWordWrap(true); // 设置自动换行
+    // QString text2 = "-[√] 正常\n"\
+    //                 "-[ ] 异常\n";
+    // label8->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    // label8->setText(text2);
+    // ui->reportTableWidget->setCellWidget(rowcount, 7, label8);
+
+
+    QWidget *widget = new QWidget();
+    QVBoxLayout *layout = new QVBoxLayout();
+    QCheckBox *check1 = new QCheckBox("正常");
+    QCheckBox *check2 = new QCheckBox("异常");
+    layout->addWidget(check1);
+    layout->addWidget(check2);
+    widget->setLayout(layout);
+    ui->reportTableWidget->setCellWidget(rowcount, 7, widget);
+#endif
+
+}
+/**
+ * @brief 异或校验 (XOR)
+ * @param data
+ * @param len
+ * @return
+ */
 uint8_t frmMain::checkNumber(const char *data, unsigned char len)
 {
     return std::accumulate(data, data + len, static_cast<uint8_t>(0), [](uint8_t acc, uint8_t val) {
@@ -133,7 +204,7 @@ void frmMain::_sendCommand(eDEVICE device, unsigned char cmd)
     send_msg[0] = 0xAA;                                   // 帧头
     send_msg[1] = device;                                 // 设备
     send_msg[2] = cmd;                                    // 命令
-    send_msg[10] = checkNumber(send_msg.constData(), 10); //BBC校验位
+    send_msg[10] = checkNumber(send_msg.constData(), 10); //XOR校验位
     send_msg[11] = static_cast<unsigned char>(0xDD);
 
     QPushButton *clickedButton = qobject_cast<QPushButton *>(sender());
@@ -167,7 +238,7 @@ void frmMain::_sendCommand(eDEVICE device,
     send_msg[2] = cmd;    // 命令
     send_msg[3] = len;    // 帧长
     std::copy(userdata, userdata + len, send_msg.begin() + 4);
-    send_msg[10] = checkNumber(send_msg.data(), 10); // BBC校验位
+    send_msg[10] = checkNumber(send_msg.data(), 10); // XOR校验位
     send_msg[11] = 0xDD;
 
     QPushButton *clickedButton = qobject_cast<QPushButton *>(sender());
@@ -198,7 +269,7 @@ void frmMain::initForm()
     QFont font;
     font.setPixelSize(25);
     ui->labTitle->setFont(font);
-    ui->labTitle->setText(" III-Robot智能巡视终端");
+    ui->labTitle->setText("变电站智能巡检平台");
     this->setWindowTitle(ui->labTitle->text());
 
     ui->stackedWidget->setStyleSheet("QLabel{font:16px;} QPushButton{font:16px;}");
@@ -221,9 +292,6 @@ void frmMain::initForm()
     ui->widgetLeftConfig->setProperty("flag", "left");
     ui->page1->setStyleSheet(QString("QWidget[flag=\"left\"] QAbstractButton{min-height:%1px;max-height:%1px;}").arg(60));
     ui->page2->setStyleSheet(QString("QWidget[flag=\"left\"] QAbstractButton{min-height:%1px;max-height:%1px;}").arg(25));
-
-    ui->labelRobotVelocity->setText(QString("%1m/s").arg(static_cast<double>(mDefaultVelocity/10.0), 3));
-//    ui->battery->setRange(0.0, 24.0);
 }
 
 void frmMain::initStyle()
@@ -445,6 +513,83 @@ void frmMain::initLogSql()
     ui->logTableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive);
     ui->logTableWidget->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
 }
+
+void frmMain::initMap()
+{
+    connect(this, &frmMain::sig_ImportMap, ui->graphicsViewMap, &MapWidget::showMap);
+    connect(this, &frmMain::sigSetRobotPose, ui->graphicsViewMap, &MapWidget::slotSetRobotPose);
+    connect(this, &frmMain::sigSetGoalStatus, ui->graphicsViewMap, &MapWidget::slotSetGoalStatus);
+
+    ui->taskTableWidget->verticalHeader()->setVisible(false);
+    ui->taskTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    // 调整表格列宽
+
+    // 设置表头
+    QStringList headers;
+    headers << "序号" <<  "巡航点位" << "任务状态" << "删除任务" << "运行任务";
+    ui->taskTableWidget->setColumnCount(headers.size());
+    ui->taskTableWidget->setHorizontalHeaderLabels(headers);
+    // 设置列的stretch属性，让它们自动拉伸
+    for(int i = 0; i < headers.size(); i++)
+    {
+        if(0==i)
+        {
+            ui->taskTableWidget->horizontalHeader()->setSectionResizeMode(i, QHeaderView::ResizeToContents);
+            continue;
+        }
+        ui->taskTableWidget->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Stretch);
+    }
+
+    QFile file("./task.txt");
+    if(file.open(QFileDevice::ReadOnly))
+    {
+        QTextStream in(&file);
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            taskList << line;
+        }
+        file.close();
+    }
+    else
+    {
+        LogManager::instance().getLogger()->error("初始化任务列表失败，请检查有无task.txt文件");
+    }
+}
+
+void frmMain::initReport()
+{
+    ui->reportTableWidget->verticalHeader()->setVisible(false);
+    // ui->reportTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    // 调整表格列宽
+
+    // 设置表头
+    QStringList headers;
+    headers << "序号" << "监控对象" << "巡检时间" << "巡检部分" << "分析结果" << "巡检图片" << "报警状态" << "人工审核" << "描述";
+    ui->reportTableWidget->setColumnCount(headers.size());
+    ui->reportTableWidget->setHorizontalHeaderLabels(headers);
+    // 设置列的stretch属性，让它们自动拉伸
+    ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+    ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(4, QHeaderView::Stretch);
+    ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(5, QHeaderView::Stretch);
+    ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(6, QHeaderView::Stretch);
+    ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(7, QHeaderView::Stretch);
+    ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(8, QHeaderView::Stretch);
+
+    ui->reportTableWidget->verticalHeader()->setDefaultSectionSize(IMAGE_HEIGHT);
+}
+
+void frmMain::initHelp()
+{
+    ui->labelHelpDoc->setTextFormat(Qt::MarkdownText);
+    QFile helpFile("./help.md");
+
+    if(helpFile.open(QIODevice::ReadOnly))
+        ui->labelHelpDoc->setText(helpFile.readAll());
+}
 #endif
 void frmMain::on_btnMenu_Min_clicked()
 {
@@ -535,7 +680,7 @@ void frmMain::slotDataTimerOut()
 //                    union UInt16Union data;
 //                    data.parts.lowByte = static_cast<unsigned char>(array.at(4));
 //                    data.parts.highByte = static_cast<unsigned char>(array.at(5));
-////                    qDebug() << "v: " + QString::number(data.value/1000.0);
+//                    qDebug() << "v: " + QString::number(data.value/1000.0);
 //                    qreal value = data.value / 10.0;
 //                    ui->dashboard->setValue(value);
 //                }
@@ -551,7 +696,7 @@ void frmMain::slotDataTimerOut()
 //                    data.parts.highByte = static_cast<unsigned char>(array.at(5));
 
 //                    ui->battery->setValue(data.value/1000.0);
-////                    ui->labelBattery->setText(QString("%1V").arg(data.value/1000.0));
+//                    ui->labelBattery->setText(QString("%1V").arg(data.value/1000.0));
 //                    qDebug() << "bat: " + QString::number(data.value/1000.0);
 //                }
 //                else {
@@ -565,7 +710,7 @@ void frmMain::slotDataTimerOut()
 //                    data.parts.lowByte = static_cast<unsigned char>(array.at(4));
 //                    data.parts.highByte = static_cast<unsigned char>(array.at(5));
 
-////                    qDebug() << "mq2: " + QString::number(data.value/1000.0);
+//                    qDebug() << "mq2: " + QString::number(data.value/1000.0);
 //                    if(data.value < 1100) ui->labelMQ2->setText("低");
 //                    else if(data.value < 2200) ui->labelMQ2->setText("中");
 //                    else ui->labelMQ2->setText("高");
@@ -690,113 +835,113 @@ void frmMain::on_btnRobotStop_clicked()
     _sendCommand(Robot, Robot_Backward);
 }
 
-void frmMain::on_btnRobotAccelerate_clicked()
-{
-    mDefaultVelocity += 1;
-    if (mDefaultVelocity >= 10)
-        mDefaultVelocity = 10;
-    ui->labelRobotVelocity->setText(
-        QString("%1m/s").arg(static_cast<double>(mDefaultVelocity / 10.0), 3));
+// void frmMain::on_btnRobotAccelerate_clicked()
+// {
+    // mDefaultVelocity += 1;
+    // if (mDefaultVelocity >= 10)
+    //     mDefaultVelocity = 10;
+    // ui->labelRobotVelocity->setText(
+    //     QString("%1m/s").arg(static_cast<double>(mDefaultVelocity / 10.0), 3));
 
-    union UInt16Union data;
-    data.value = short(mDefaultVelocity / 10.0 * 1000);
+    // union UInt16Union data;
+    // data.value = short(mDefaultVelocity / 10.0 * 1000);
 
-    unsigned char userdata[2] = {data.parts.lowByte, data.parts.highByte};
-    _sendCommand(Robot, RobotVelocity, userdata, 2);
-}
+    // unsigned char userdata[2] = {data.parts.lowByte, data.parts.highByte};
+    // _sendCommand(Robot, RobotVelocity, userdata, 2);
+// }
 //
-void frmMain::on_btnDecelerate_clicked()
-{
-    mDefaultVelocity -= 1;
-    if (mDefaultVelocity <= 0)
-        mDefaultVelocity = 0;
-    ui->labelRobotVelocity->setText(
-        QString("%1m/s").arg(static_cast<double>(mDefaultVelocity / 10.0), 3));
-    union UInt16Union data;
-    data.value = short(mDefaultVelocity / 10.0 * 1000);
+// void frmMain::on_btnDecelerate_clicked()
+// {
+    // mDefaultVelocity -= 1;
+    // if (mDefaultVelocity <= 0)
+    //     mDefaultVelocity = 0;
+    // ui->labelRobotVelocity->setText(
+    //     QString("%1m/s").arg(static_cast<double>(mDefaultVelocity / 10.0), 3));
+    // union UInt16Union data;
+    // data.value = short(mDefaultVelocity / 10.0 * 1000);
 
-    unsigned char userdata[2] = {data.parts.lowByte, data.parts.highByte};
-    _sendCommand(Robot, RobotVelocity, userdata, 2);
-}
+    // unsigned char userdata[2] = {data.parts.lowByte, data.parts.highByte};
+    // _sendCommand(Robot, RobotVelocity, userdata, 2);
+// }
 
 /**
  * @brief frmMain::on_btnSaveConfig_clicked
  */
 void frmMain::on_btnSaveConfig_clicked()
 {
-//    QString filepath = QFileDialog::getOpenFileName(this, "选择配置文件", "./", "INI Files(*.ini)",nullptr,QFileDialog::DontUseNativeDialog);
-//    if(filepath.isEmpty()) return;
-//    ui->leSaveConfig->setText(filepath);
+   QString filepath = QFileDialog::getOpenFileName(this, "选择配置文件", "./", "INI Files(*.ini)",nullptr,QFileDialog::DontUseNativeDialog);
+   if(filepath.isEmpty()) return;
+   ui->leSaveConfig->setText(filepath);
 }
 
 void frmMain::on_btnSaveImage_clicked()
 {
-//    QString path = QFileDialog::getExistingDirectory(this, "设置截图保存路径", "./", QFileDialog::DontUseNativeDialog);
-//    if(path.isEmpty()) return;
+   QString path = QFileDialog::getExistingDirectory(this, "设置截图保存路径", "./", QFileDialog::DontUseNativeDialog);
+   if(path.isEmpty()) return;
 
-//    ui->leSaveImage->setText(path);
+   ui->leSaveImage->setText(path);
 }
 
 void frmMain::on_btnSaveVideo_clicked()
 {
-//    QString path = QFileDialog::getExistingDirectory(this, "设置录像保存路径", "./", QFileDialog::DontUseNativeDialog);
-//    if(path.isEmpty()) return;
+   QString path = QFileDialog::getExistingDirectory(this, "设置录像保存路径", "./", QFileDialog::DontUseNativeDialog);
+   if(path.isEmpty()) return;
 
-//    ui->leSaveVideo->setText(path);
+   ui->leSaveVideo->setText(path);
 }
 
 void frmMain::on_btnC1Cancel_clicked()
 {
-//    slotConfigChange(0);
+   slotConfigChange(0);
 }
 
 
 void frmMain::on_btnC1Apply_clicked()
 {
-//    QString _configSavePath = ui->leSaveConfig->text();
-//    QString _imageSavePath = ui->leSaveImage->text();
-//    QString _videoSavePath = ui->leSaveVideo->text();
+   QString _configSavePath = ui->leSaveConfig->text();
+   QString _imageSavePath = ui->leSaveImage->text();
+   QString _videoSavePath = ui->leSaveVideo->text();
 
-//    QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
-//    settings.beginGroup("Config1");
-//    settings.setValue("Language", ui->cbLanguage->currentIndex());
-//    settings.setValue("Theme", ui->cbTheme->currentIndex());
-//    settings.setValue("configSavePath", _configSavePath);
-//    settings.setValue("imageSavePath", _imageSavePath);
-//    settings.setValue("videoSavePath", _videoSavePath);
-//    settings.endGroup();
+   QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
+   settings.beginGroup("Config1");
+   settings.setValue("Language", ui->cbLanguage->currentIndex());
+   settings.setValue("Theme", ui->cbTheme->currentIndex());
+   settings.setValue("configSavePath", _configSavePath);
+   settings.setValue("imageSavePath", _imageSavePath);
+   settings.setValue("videoSavePath", _videoSavePath);
+   settings.endGroup();
 
-//    if(settings.status() != QSettings::NoError)
-//    {
-//        QMessageBox::warning(this, "警告", "设置保存失败");
-//    }
-//    else
-//    {
-//        QMessageBox::information(this, "提示", "应用成功");
-//    }
+   if(settings.status() != QSettings::NoError)
+   {
+       QMessageBox::warning(this, "警告", "设置保存失败");
+   }
+   else
+   {
+       QMessageBox::information(this, "提示", "应用成功");
+   }
 }
 
 void frmMain::on_btnC1Confirm_clicked()
 {
-//    QString _configSavePath = ui->leSaveConfig->text();
-//    QString _imageSavePath = ui->leSaveImage->text();
-//    QString _videoSavePath = ui->leSaveVideo->text();
+   QString _configSavePath = ui->leSaveConfig->text();
+   QString _imageSavePath = ui->leSaveImage->text();
+   QString _videoSavePath = ui->leSaveVideo->text();
 
-//    QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
-//    settings.beginGroup("Config1");
-//    settings.setValue("configSavePath", _configSavePath);
-//    settings.setValue("imageSavePath", _imageSavePath);
-//    settings.setValue("videoSavePath", _videoSavePath);
-//    settings.endGroup();
+   QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
+   settings.beginGroup("Config1");
+   settings.setValue("configSavePath", _configSavePath);
+   settings.setValue("imageSavePath", _imageSavePath);
+   settings.setValue("videoSavePath", _videoSavePath);
+   settings.endGroup();
 
-//    if(settings.status() != QSettings::NoError)
-//    {
-//        QMessageBox::warning(this, "警告", "设置保存失败");
-//    }
-//    else
-//    {
-//        QMessageBox::information(this, "提示", "保存成功");
-//    }
+   if(settings.status() != QSettings::NoError)
+   {
+       QMessageBox::warning(this, "警告", "设置保存失败");
+   }
+   else
+   {
+       QMessageBox::information(this, "提示", "保存成功");
+   }
 }
 
 void frmMain::on_btnC2Cancel_clicked()
@@ -872,10 +1017,10 @@ void frmMain::on_btnOpenSerial_clicked()
 
 void frmMain::on_tbFilter_clicked()
 {
-//    int level = ui->cbLogLevel->currentIndex();
-//    LoggerSql::LogLevel _level = static_cast<LoggerSql::LogLevel>(level);
-//    QList<QVariantMap> data = plogSql->getLogs(_level);
-//    appendDatat2LogWidget(data);
+   int level = ui->cbLogLevel->currentIndex();
+   LoggerSql::LogLevel _level = static_cast<LoggerSql::LogLevel>(level);
+   QList<QVariantMap> data = plogSql->getLogs(_level);
+   appendDatat2LogWidget(data);
 }
 
 void frmMain::on_tbSelectLogFile_clicked()
@@ -904,9 +1049,97 @@ void frmMain::on_btnImportMap_clicked()
                                                     "Select Map",
                                                     "./maps",
                                                     "Map(*.pgm *png)");
-    // qDebug() << filename;
     emit sig_ImportMap(filename);
-    // QPixmap pixmap(filename);
-    // ui->label_map->setPixmap(pixmap);
+}
+
+
+void frmMain::on_btnAddGoalPoint_clicked()
+{
+    int rowcount = ui->taskTableWidget->rowCount();
+    ui->taskTableWidget->insertRow(rowcount);
+
+    QTableWidgetItem *Item0 = new QTableWidgetItem(QString::number(rowcount+1));
+    Item0->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    ui->taskTableWidget->setItem(rowcount, 0, Item0);
+
+    QComboBox *combox = new QComboBox();
+    combox->addItems(taskList);
+    ui->taskTableWidget->setCellWidget(rowcount, 1, combox);
+
+    connect(combox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::currentTextChanged), [this, combox, rowcount](const QString &text) {
+        // qDebug() << "row: " << rowcount << "index: " << index;
+        qDebug() << text;
+        int index = taskList.indexOf(text);
+        emit sigSetGoalStatus(index+1, GoalItem::GOALTYPE::Undone);
+    });
+
+    QTableWidgetItem *taskStatusItem = new QTableWidgetItem("未巡检");
+    taskStatusItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    ui->taskTableWidget->setItem(rowcount, 2, taskStatusItem);
+
+    QPushButton *btnDelete = new QPushButton("删除");
+    ui->taskTableWidget->setCellWidget(rowcount, 3, btnDelete);
+
+    QPushButton *btnRun = new QPushButton("运行");
+    ui->taskTableWidget->setCellWidget(rowcount, 4, btnRun);
+
+    QString style = "QPushButton{\
+                    border-radius:1px;\
+                    color:#DCDCDC;\
+                    padding:1px;\
+                    margin:0px;\
+                    background:none;\
+                    border-style:none;}";
+    btnDelete->setStyleSheet(style);
+    btnRun->setStyleSheet(style);
+
+    // emit sigSetGoalStatus();
+}
+
+void frmMain::on_btnSaveTaskList_clicked()
+{
+    int rowcount = ui->taskTableWidget->rowCount();
+    for(int i = 0; i < rowcount; i++)
+    {
+        QString str = qobject_cast<QComboBox*>(ui->taskTableWidget->cellWidget(i, 0))->currentText();
+        qDebug()<< str;
+    }
+}
+
+
+void frmMain::on_btnImportTaskList_clicked()
+{
+
+}
+
+
+void frmMain::on_btnExportReport_clicked()
+{
+    QString filename = QFileDialog::getOpenFileName(this,
+                                                    "Select IMAGE",
+                                                    "./",
+                                                    "Map(*.jpg *png)");
+    qDebug() << filename;
+    if(filename == "") return;
+    qDebug() << filename;
+    QImage image(filename);
+
+    appendData2ReportWidget("通信及事故照明盘", image);
+}
+
+
+void frmMain::on_btnRealTimeDetect_clicked(bool checked)
+{
+    if(checked)
+    {
+        ui->btnRealTimeDetect->setText("开启实时检测");
+        ui->btnRealTimeDetect->setIcon(QIcon(":/image/switch-on.png"));
+    }
+    else
+    {
+        ui->btnRealTimeDetect->setText("关闭实时检测");
+        ui->btnRealTimeDetect->setIcon(QIcon(":/image/switch-off.png"));
+    }
+
 }
 

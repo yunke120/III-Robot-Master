@@ -18,5 +18,14 @@
         <file>image/bat.png</file>
         <file>image/connect.png</file>
         <file>image/disconnect.png</file>
+        <file>image/ptzrightdown.png</file>
+        <file>image/ptzrightup.png</file>
+        <file>image/ptzleftdown.png</file>
+        <file>image/ptzleftup.png</file>
+        <file>image/export.png</file>
+        <file>image/recordvideo.png</file>
+        <file>image/screenshot.png</file>
+        <file>image/switch-off.png</file>
+        <file>image/switch-on.png</file>
     </qresource>
 </RCC>
