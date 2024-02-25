@@ -20,9 +20,10 @@ MapWidget::MapWidget(QWidget *parent) : QGraphicsView(parent), IsMove(false)
     pScene->addItem(pixmapItem);
 
     pathItem = new QGraphicsPathItem(robotPath);
+    pathItem->setZValue(5);
     QPen pen = pathItem->pen();
-    pen.setWidth(2);
-    pen.setColor(Qt::red);
+    pen.setWidth(1);
+    pen.setColor(Qt::green);
     pathItem->setPen(pen);
     pScene->addItem(pathItem);
 
@@ -95,7 +96,7 @@ void MapWidget::showMap(const QString &filepath)
 
     robotItem = new RobotItem;
     robotItem->setPos(160,180);
-    robotItem->setZValue(1);
+    robotItem->setZValue(10);
     robotItem->setAngle(180);
     pScene->addItem(robotItem);
     robotPath.moveTo(160,180);
@@ -109,6 +110,28 @@ void MapWidget::showMap(const QString &filepath)
         pScene->addItem(item);
         goalItemMap.insert(id, item);
     }
+
+    QPainterPath defaultRobotPath;
+    defaultRobotPath.moveTo(160,180);
+    defaultRobotPath.lineTo(20, 180);
+    defaultRobotPath.lineTo(20, 140);
+    defaultRobotPath.lineTo(180, 140);
+    defaultRobotPath.lineTo(180, 100);
+    defaultRobotPath.lineTo(20, 100);
+    defaultRobotPath.lineTo(20, 60);
+    defaultRobotPath.lineTo(180, 60);
+    defaultRobotPath.lineTo(180, 180);
+    defaultRobotPath.lineTo(160, 180);
+    // defaultRobotPath.closeSubpath();
+    QGraphicsPathItem *defaultPathItem = new QGraphicsPathItem(defaultRobotPath);
+    defaultPathItem->setZValue(3);
+    QPen pen = defaultPathItem->pen();
+    pen.setStyle(Qt::DotLine);
+    pen.setColor(QColor(151, 69, 183, 155));
+    // pen.setBrush(Qt::NoBrush);
+    defaultPathItem->setPen(pen);
+    pScene->addItem(defaultPathItem);
+    // defaultPathItem->setPath(defaultRobotPath);
 }
 
 void MapWidget::slotSetRobotPose(int x, int y, int w)

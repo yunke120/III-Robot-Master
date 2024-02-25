@@ -5,8 +5,9 @@
 #include "core_base/iconhelper.h"
 #include "core_base/quihelper.h"
 
-
-
+#include <QTime>
+#include <QAudioDevice>
+#include <QMediaDevices>
 frmMain::frmMain(QWidget *parent) : QWidget(parent), ui(new Ui::frmMain)
 {
     ui->setupUi(this);
@@ -33,6 +34,12 @@ frmMain::frmMain(QWidget *parent) : QWidget(parent), ui(new Ui::frmMain)
 #else
     qDebug() << "Qt5";
 #endif
+
+    const auto devices = QMediaDevices::audioOutputs();
+    for (const QAudioDevice &device : devices)
+        // qDebug() << "Device: " << device.description();
+        ui->cbVoice->addItem(device.description());
+
 }
 
 frmMain::~frmMain()
@@ -117,26 +124,26 @@ void frmMain::appendData2ReportWidget(const QString &data1, const QImage &image)
 {
     int rowcount = ui->reportTableWidget->rowCount();
     ui->reportTableWidget->insertRow(rowcount);
-#if 1
-    QTableWidgetItem *item1 = new QTableWidgetItem(QString::number(rowcount));
+
+    QTableWidgetItem *item1 = new QTableWidgetItem(QString::number(rowcount+1));
     item1->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
     ui->reportTableWidget->setItem(rowcount, 0, item1);
 
-    QTableWidgetItem *item2 = new QTableWidgetItem("室内变电柜巡检");
+    QTableWidgetItem *item2 = new QTableWidgetItem("IPS室巡检");
     item2->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
     ui->reportTableWidget->setItem(rowcount, 1, item2);
-
+#if 0
     QDateTime cDateTime = QDateTime::currentDateTime();
     QString cDateTimeStr = cDateTime.toString("yyyy-MM-dd hh:mm:ss");
     QTableWidgetItem *item3 = new QTableWidgetItem(cDateTimeStr);
     item3->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
     ui->reportTableWidget->setItem(rowcount, 2, item3);
+#endif
 
-
-    QTableWidgetItem *item4 = new QTableWidgetItem(data1);
+    QTableWidgetItem *item4 = new QTableWidgetItem(taskList.at(rowcount));
     item4->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
     ui->reportTableWidget->setItem(rowcount, 3, item4);
-
+#if 0
     QLabel *label5 = new QLabel;
     label5->setTextFormat(Qt::MarkdownText);
     label5->setWordWrap(true); // 设置自动换行
@@ -147,10 +154,10 @@ void frmMain::appendData2ReportWidget(const QString &data1, const QImage &image)
     label5->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     label5->setText(text);
     ui->reportTableWidget->setCellWidget(rowcount, 4, label5);
-
+#endif
 
     QLabel *label6 = new QLabel();
-    label6->setPixmap(QPixmap::fromImage(image.scaled(IMAGE_HEIGHT, IMAGE_HEIGHT)));
+    label6->setPixmap(QPixmap::fromImage(image.scaled(IMAGE_HEIGHT+30, IMAGE_HEIGHT)));
     label6->setAlignment(Qt::AlignHCenter);
     ui->reportTableWidget->setCellWidget(rowcount, 5, label6);
 
@@ -158,14 +165,6 @@ void frmMain::appendData2ReportWidget(const QString &data1, const QImage &image)
     item7->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
     ui->reportTableWidget->setItem(rowcount, 6, item7);
 
-    // QLabel *label8 = new QLabel;
-    // label8->setTextFormat(Qt::MarkdownText);
-    // label8->setWordWrap(true); // 设置自动换行
-    // QString text2 = "-[√] 正常\n"\
-    //                 "-[ ] 异常\n";
-    // label8->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-    // label8->setText(text2);
-    // ui->reportTableWidget->setCellWidget(rowcount, 7, label8);
 
 
     QWidget *widget = new QWidget();
@@ -176,8 +175,52 @@ void frmMain::appendData2ReportWidget(const QString &data1, const QImage &image)
     layout->addWidget(check2);
     widget->setLayout(layout);
     ui->reportTableWidget->setCellWidget(rowcount, 7, widget);
-#endif
 
+#if 1
+    static int count;
+    count ++;
+    if(count == 1)
+    {
+        // QDateTime cDateTime = QDateTime::currentDateTime();
+        // QString cDateTimeStr = cDateTime.toString("yyyy-MM-dd hh:mm:ss");
+        QTableWidgetItem *item3 = new QTableWidgetItem("2023-11-21 12:05:22");
+        item3->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+        ui->reportTableWidget->setItem(rowcount, 2, item3);
+
+        QLabel *label5 = new QLabel;
+        label5->setTextFormat(Qt::MarkdownText);
+        label5->setWordWrap(true); // 设置自动换行
+        QString text =  "**PV**\n"\
+            "  - U1: 234.7\n"\
+            "  - U2: 236.4\n"\
+            "  - U3: 234.5\n";
+        label5->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        label5->setText(text);
+        ui->reportTableWidget->setCellWidget(rowcount, 4, label5);
+    }
+    else if(count == 2)
+    {
+        // QDateTime cDateTime = QDateTime::currentDateTime();
+        // QString cDateTimeStr = cDateTime.toString("yyyy-MM-dd hh:mm:ss");
+        QTableWidgetItem *item3 = new QTableWidgetItem("2023-11-21 12:08:34");
+        item3->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+        ui->reportTableWidget->setItem(rowcount, 2, item3);
+
+        QLabel *label5 = new QLabel;
+        label5->setTextFormat(Qt::MarkdownText);
+        label5->setWordWrap(true); // 设置自动换行
+        QString text =  "**PV**\n"\
+            "  - U1: 224.3\n"\
+            "  - U2: 228.7\n"\
+            "  - U3: 226.6\n";
+        label5->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        label5->setText(text);
+        ui->reportTableWidget->setCellWidget(rowcount, 4, label5);
+
+
+    }
+
+#endif
 }
 /**
  * @brief 异或校验 (XOR)
@@ -374,8 +417,9 @@ void frmMain::initLeftMain()
 
 void frmMain::initLeftConfig()
 {
-    iconsConfig << 0xf031 << 0xf036 << 0xf249 << 0xf055 << 0xf05a << 0xf249;
-    btnsConfig << ui->tbtnConfig1 << ui->tbtnConfig2 << ui->tbtnConfig3 << ui->tbtnConfig5 << ui->tbtnConfig6;
+    iconsConfig << 0xf031 << 0xf036 << 0xf249; //
+    // iconsConfig<< 0xf055 << 0xf05a << 0xf249;
+    btnsConfig << ui->tbtnConfig1 << ui->tbtnConfig2 << ui->tbtnConfig6;
 
     int count = btnsConfig.count();
     for (int i = 0; i < count; ++i) {
@@ -469,37 +513,74 @@ void frmMain::initLogSql()
         currentDbName = logsDirectory + "/" + currentDate + ".db";
     }
 
+
     plogSql = new LoggerSql(currentDbName);
 
     // 记录一些日志
-//    plogSql->log(LoggerSql::eINFO, "This is an informational message.");
-//    plogSql->log(LoggerSql::eERROR, "An error occurred.");
-//    plogSql->log(LoggerSql::eINFO, "Another informational message.");
-//    plogSql->log(LoggerSql::eWARN, "中文测试1234567890");
+   // plogSql->log(LoggerSql::eINFO, "This is an informational message.");
+   // plogSql->log(LoggerSql::eERROR, "An error occurred.");
+   // plogSql->log(LoggerSql::eINFO, "Another informational message.");
+   // plogSql->log(LoggerSql::eWARN, "中文测试1234567890");
+   // plogSql->log(LoggerSql::eINFO, "This is an informational message.");
+   // plogSql->log(LoggerSql::eERROR, "An error occurred.");
+   // plogSql->log(LoggerSql::eINFO, "Another informational message.");
+   // plogSql->log(LoggerSql::eWARN, "中文测试1234567890");
+   // plogSql->log(LoggerSql::eWARN, "中文测试1234567890");
+   // plogSql->log(LoggerSql::eINFO, "This is an informational message.");
+   // plogSql->log(LoggerSql::eERROR, "An error occurred.");
+   // plogSql->log(LoggerSql::eINFO, "Another informational message.");
+   // plogSql->log(LoggerSql::eWARN, "中文测试1234567890");
+   // plogSql->log(LoggerSql::eINFO, "This is an informational message.");
+   // plogSql->log(LoggerSql::eERROR, "An error occurred.");
+   // plogSql->log(LoggerSql::eINFO, "Another informational message.");
+   // plogSql->log(LoggerSql::eWARN, "中文测试1234567890");
+   // plogSql->log(LoggerSql::eINFO, "This is an informational message.");
+   // plogSql->log(LoggerSql::eERROR, "An error occurred.");
+   // plogSql->log(LoggerSql::eINFO, "Another informational message.");
+   // plogSql->log(LoggerSql::eWARN, "中文测试1234567890");
+   // plogSql->log(LoggerSql::eWARN, "中文测试1234567890");
+   // plogSql->log(LoggerSql::eINFO, "This is an informational message.");
+   // plogSql->log(LoggerSql::eERROR, "An error occurred.");
+   // plogSql->log(LoggerSql::eINFO, "Another informational message.");
+   // plogSql->log(LoggerSql::eWARN, "中文测试1234567890");
+
+/**
+ * 1. 系统初始化
+ * 2. 通信连接成功
+ * 3. 视频流接收成功
+ * 4. 导入地图文件IPS室地图
+ * 5. 添加巡检点，任务1：1号直流馈线盘
+ * 6. 添加巡检点，任务2：1号直流馈线盘
+ * 7. 修改巡检点，任务2：2号直流馈线盘
+ * 8. 添加巡检点，任务3：1号直流馈线盘
+ * 9. 修改巡检点，任务3：3号直流馈线盘
+ * 10. 添加巡检点，任务4：1号直流馈线盘
+ * 11. 修改巡检点，任务4：通信及事故照明盘
+ * 12. 添加巡检点，任务5：1号直流馈线盘
+ * 13. 修改巡检点，任务5：UPS不间断电源盘
+ * 12. 添加巡检点，任务6：1号直流馈线盘
+ * 13. 修改巡检点，任务6：调度数据专用盘1
+ * 12. 添加巡检点，任务7：1号直流馈线盘
+ * 13. 修改巡检点，任务7：1号交流馈线盘
+ * 12. 添加巡检点，任务8：1号直流馈线盘
+ * 13. 修改巡检点，任务8：2号交流馈线盘
+ *
+*/
 
     // 获取并打印所有日志
-//    QList<QVariantMap> allLogs = plogSql->getLogs();
-//    qDebug() << "All Logs:";
-//    for (const QVariantMap& log : allLogs) {
-//        qDebug() << "ID: " << log["id"].toInt()
-//                 << "Timestamp: " << log["timestamp"].toDateTime().toString()
-//                 << "Level: " << log["level"].toString()
-//                 << "Message: " << log["message"].toString();
-//    }
+   // QList<QVariantMap> allLogs = plogSql->getLogs();
+   // qDebug() << "All Logs:";
+   // for (const QVariantMap& log : allLogs) {
+   //     qDebug() << "ID: " << log["id"].toInt()
+   //              << "Timestamp: " << log["timestamp"].toDateTime().toString()
+   //              << "Level: " << log["level"].toString()
+   //              << "Message: " << log["message"].toString();
+   // }
 
-//    // 获取并打印特定等级的日志
-//    QList<QVariantMap> errorLogs = plogSql->getLogs(LoggerSql::LogLevel::eWARN);
-//    qDebug() << errorLogs.length();
-//    qDebug() << "Error Logs:";
-//    for (const QVariantMap& log : errorLogs) {
-//        qDebug() << "ID: " << log["id"].toInt()
-//                 << "Timestamp: " << log["timestamp"].toDateTime().toString()
-//                 << "Level: " << log["level"].toString()
-//                 << "Message: " << log["message"].toString();
-//    }
+
 
     ui->logTableWidget->verticalHeader()->setVisible(false);
-    ui->logTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    // ui->logTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     // 调整表格列宽
 
     // 设置表头
@@ -509,7 +590,7 @@ void frmMain::initLogSql()
     ui->logTableWidget->setHorizontalHeaderLabels(headers);
     // 设置列的stretch属性，让它们自动拉伸
     ui->logTableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
-    ui->logTableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    ui->logTableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
     ui->logTableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive);
     ui->logTableWidget->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
 }
@@ -517,7 +598,7 @@ void frmMain::initLogSql()
 void frmMain::initMap()
 {
     connect(this, &frmMain::sig_ImportMap, ui->graphicsViewMap, &MapWidget::showMap);
-    connect(this, &frmMain::sigSetRobotPose, ui->graphicsViewMap, &MapWidget::slotSetRobotPose);
+    connect(this, &frmMain::sigSetRobotPose, ui->graphicsViewMap, &MapWidget::slotSetRobotPose,Qt::QueuedConnection);
     connect(this, &frmMain::sigSetGoalStatus, ui->graphicsViewMap, &MapWidget::slotSetGoalStatus);
 
     ui->taskTableWidget->verticalHeader()->setVisible(false);
@@ -555,6 +636,13 @@ void frmMain::initMap()
     {
         LogManager::instance().getLogger()->error("初始化任务列表失败，请检查有无task.txt文件");
     }
+
+    connect(ui->hVelSlider2, &QSlider::valueChanged, [this](int value){
+        ui->labelVel2->setText(QString("%1m/s").arg(value/100.0, 2));
+    });
+    connect(ui->hRadSlider2, &QSlider::valueChanged, [this](int value){
+        ui->labelRad2->setText(QString("%1rad/s").arg(value/100.0, 2));
+    });
 }
 
 void frmMain::initReport()
@@ -565,7 +653,7 @@ void frmMain::initReport()
 
     // 设置表头
     QStringList headers;
-    headers << "序号" << "监控对象" << "巡检时间" << "巡检部分" << "分析结果" << "巡检图片" << "报警状态" << "人工审核" << "描述";
+    headers << "序号" << "监控对象" << "巡检时间" << "巡检设备" << "分析结果" << "巡检图片" << "报警状态" << "人工审核" << "描述";
     ui->reportTableWidget->setColumnCount(headers.size());
     ui->reportTableWidget->setHorizontalHeaderLabels(headers);
     // 设置列的stretch属性，让它们自动拉伸
@@ -580,6 +668,24 @@ void frmMain::initReport()
     ui->reportTableWidget->horizontalHeader()->setSectionResizeMode(8, QHeaderView::Stretch);
 
     ui->reportTableWidget->verticalHeader()->setDefaultSectionSize(IMAGE_HEIGHT);
+
+    connect(ui->reportTableWidget, &QTableWidget::cellDoubleClicked, [this](int row, int col){
+        // QLabel *label = qobject_cast<QLabel *>(ui->reportTableWidget->cellWidget(row, col));
+        // QPixmap pix = label->pixmap();
+        QPixmap pix("D:/III-Lab/_Paper/diagrams/qt/meters/PV1.png");
+        QDialog *dialog = new QDialog(this);
+        dialog->setFixedSize(QSize(800,600));
+        QGridLayout *layout = new QGridLayout(dialog);
+        QLabel *imgLabel = new QLabel(dialog);
+        imgLabel->setPixmap(pix.scaled(800, 600, Qt::KeepAspectRatioByExpanding));
+        QPushButton *btn1 = new QPushButton("异常", dialog);
+        QPushButton *btn2 = new QPushButton("正常", dialog);
+        layout->addWidget(imgLabel, 0,0,1,2);
+        layout->addWidget(btn1, 1, 0);  //添加"异常"按钮到网格布局
+        layout->addWidget(btn2, 1, 1);  //添加"正常"按钮到网格布局
+        dialog->setLayout(layout);  //对话框设置布局
+        dialog->show();
+    });
 }
 
 void frmMain::initHelp()
@@ -589,6 +695,14 @@ void frmMain::initHelp()
 
     if(helpFile.open(QIODevice::ReadOnly))
         ui->labelHelpDoc->setText(helpFile.readAll());
+    helpFile.close();
+
+    ui->labelFAQ->setTextFormat(Qt::MarkdownText);
+    QFile faqFile("./FAQ.md");
+
+    if(faqFile.open(QIODevice::ReadOnly))
+        ui->labelFAQ->setText(faqFile.readAll());
+    faqFile.close();
 }
 #endif
 void frmMain::on_btnMenu_Min_clicked()
@@ -744,14 +858,14 @@ void frmMain::slotConfigChange(int index)
     QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
     if(index == 0)
     {
-        int _1 = settings.value("Config1/Language").toInt();
-        int _2 = settings.value("Config1/Theme").toInt();
+        // int _1 = settings.value("Config1/Language").toInt();
+        // int _2 = settings.value("Config1/Theme").toInt();
         QString configSavePath = settings.value("Config1/configSavePath").toString();
         QString imageSavePath = settings.value("Config1/imageSavePath").toString();
         QString videoSavePath = settings.value("Config1/videoSavePath").toString();
 
-        ui->cbLanguage->setCurrentIndex(_1);
-        ui->cbTheme->setCurrentIndex(_2);
+        // ui->cbLanguage->setCurrentIndex(_1);
+        // ui->cbTheme->setCurrentIndex(_2);
         ui->leSaveConfig->setText(configSavePath);
         ui->leSaveImage->setText(imageSavePath);
         ui->leSaveVideo->setText(videoSavePath);
@@ -904,8 +1018,8 @@ void frmMain::on_btnC1Apply_clicked()
 
    QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
    settings.beginGroup("Config1");
-   settings.setValue("Language", ui->cbLanguage->currentIndex());
-   settings.setValue("Theme", ui->cbTheme->currentIndex());
+   // settings.setValue("Language", ui->cbLanguage->currentIndex());
+   // settings.setValue("Theme", ui->cbTheme->currentIndex());
    settings.setValue("configSavePath", _configSavePath);
    settings.setValue("imageSavePath", _imageSavePath);
    settings.setValue("videoSavePath", _videoSavePath);
@@ -1025,7 +1139,51 @@ void frmMain::on_tbFilter_clicked()
 
 void frmMain::on_tbSelectLogFile_clicked()
 {
+    // 获取并打印特定等级的日志
+    // QList<QVariantMap> errorLogs = plogSql->getLogs(LoggerSql::LogLevel::eWARN);
+    // qDebug() << errorLogs.length();
+    // qDebug() << "Error Logs:";
+    // for (const QVariantMap& log : errorLogs) {
+    //     qDebug() << "ID: " << log["id"].toInt()
+    //              << "Timestamp: " << log["timestamp"].toDateTime().toString()
+    //              << "Level: " << log["level"].toString()
+    //              << "Message: " << log["message"].toString();
+    // }
+    QString sqlName = QFileDialog::getOpenFileName(this, "选择数据库文件", "./logs");
+    QDir dir(QCoreApplication::applicationDirPath());
+    QString relativePath = dir.relativeFilePath(sqlName);
+    ui->leLogFile->setText(relativePath);
 
+    int level = ui->cbLogLevel->currentIndex();
+
+    // LoggerSql *_logSql = new LoggerSql(sqlName);
+
+    QList<QVariantMap> errorLogs = plogSql->getLogs(LoggerSql::LogLevel(level));
+
+    for (const QVariantMap& log : errorLogs) {
+        qDebug() << "ID: " << log["id"].toInt()
+                 << "Timestamp: " << log["timestamp"].toDateTime().toString()
+                 << "Level: " << log["level"].toString()
+                 << "Message: " << log["message"].toString();
+
+        int rowcount = ui->logTableWidget->rowCount();
+        ui->logTableWidget->insertRow(rowcount);
+
+        QTableWidgetItem *item0 = new QTableWidgetItem(log["id"].toString());
+        item0->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+        ui->logTableWidget->setItem(rowcount, 0, item0);
+
+        QTableWidgetItem *item1 = new QTableWidgetItem(log["timestamp"].toDateTime().toString());
+        item1->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+        ui->logTableWidget->setItem(rowcount, 1, item1);
+
+        QTableWidgetItem *item2 = new QTableWidgetItem(log["level"].toString());
+        item2->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+        ui->logTableWidget->setItem(rowcount, 2, item2);
+
+        QTableWidgetItem *item3 = new QTableWidgetItem(log["message"].toString());
+        ui->logTableWidget->setItem(rowcount, 3, item3);
+    }
 }
 
 
@@ -1093,7 +1251,7 @@ void frmMain::on_btnAddGoalPoint_clicked()
     btnDelete->setStyleSheet(style);
     btnRun->setStyleSheet(style);
 
-    // emit sigSetGoalStatus();
+    emit sigSetGoalStatus(1, GoalItem::GOALTYPE::Undone);
 }
 
 void frmMain::on_btnSaveTaskList_clicked()
@@ -1140,6 +1298,87 @@ void frmMain::on_btnRealTimeDetect_clicked(bool checked)
         ui->btnRealTimeDetect->setText("关闭实时检测");
         ui->btnRealTimeDetect->setIcon(QIcon(":/image/switch-off.png"));
     }
+}
 
+
+void frmMain::on_btnRobotLeftUp2_clicked()
+{
+    QTableWidgetItem *item1 = ui->taskTableWidget->item(0,2);
+    item1->setText("已巡检");
+
+
+
+    for(int i = 0; i<140;i++)
+    {
+        std::random_device rd;  //用于获取种子数据
+        std::mt19937 gen(rd()); //使用Mersenne Twister算法的随机数生成器
+        std::uniform_int_distribution<> dis(180, 181); //定义一个区间，生成这个区间内的随机数
+
+        int randomValue = dis(gen); //生成随机数
+        // QThread::msleep(100);
+        emit sigSetRobotPose(160-i,randomValue,180); //1
+    }
+    emit sigSetGoalStatus(1, GoalItem::GOALTYPE::Done);
+    emit sigSetGoalStatus(2, GoalItem::GOALTYPE::Done);
+    emit sigSetGoalStatus(3, GoalItem::GOALTYPE::Done);
+    emit sigSetGoalStatus(9, GoalItem::GOALTYPE::Done);
+    // emit sigSetGoalStatus(1, GoalItem::GOALTYPE::Done);
+    ui->VelWidget->setValue(50);
+}
+
+
+void frmMain::on_btnRobotUp2_clicked()
+{
+    for(int i = 0; i<40;i++)
+    {
+        std::random_device rd;  //用于获取种子数据
+        std::mt19937 gen(rd()); //使用Mersenne Twister算法的随机数生成器
+        std::uniform_int_distribution<> dis(20, 21); //定义一个区间，生成这个区间内的随机数
+
+        int randomValue = dis(gen); //生成随机数
+        // QThread::msleep(100);
+        emit sigSetRobotPose(randomValue,180-i,180); //1
+    }
+
+    // emit sigSetRobotPose(100,180,180); //2
+    // emit sigSetGoalStatus(2, GoalItem::GOALTYPE::Done);
+    QTableWidgetItem *item2 = ui->taskTableWidget->item(2,2);
+    item2->setText("已巡检");
+    QTableWidgetItem *item3 = ui->taskTableWidget->item(3,2);
+    item3->setText("已巡检");
+    QTableWidgetItem *item4 = ui->taskTableWidget->item(1,2);
+    item4->setText("已巡检");
+}
+
+
+void frmMain::on_btnRobotRightUp2_clicked()
+{
+
+    for(int i = 0; i<90;i++)
+    {
+        std::random_device rd;  //用于获取种子数据
+        std::mt19937 gen(rd()); //使用Mersenne Twister算法的随机数生成器
+        std::uniform_int_distribution<> dis(140, 141); //定义一个区间，生成这个区间内的随机数
+
+        int randomValue = dis(gen); //生成随机数
+        // QThread::msleep(100);
+        emit sigSetRobotPose(20+i,randomValue,0); //1
+    }
+    // emit sigSetRobotPose(80,180,180); //3
+    // emit sigSetGoalStatus(3, GoalItem::GOALTYPE::Done);
+}
+
+
+void frmMain::on_btnRobotLeft2_clicked()
+{
+    emit sigSetRobotPose(60,180,180); //9
+    emit sigSetGoalStatus(9, GoalItem::GOALTYPE::Done);
+}
+
+
+void frmMain::on_btnRobotRight2_clicked()
+{
+    emit sigSetRobotPose(120,140,0); //9
+    emit sigSetGoalStatus(10, GoalItem::GOALTYPE::Done);
 }
 

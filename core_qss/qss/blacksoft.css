@@ -747,3 +747,15 @@ QPushButton#btnRobotStop,QPushButton#btnRobotStop2{
 color: #CA5F5F;
 min-height: 35px;
 }
+
+QLineEdit#leInspector
+{
+background:transparent;
+color:#FFFFFF;
+border-color:#FFFFFF;
+border-style:solid;
+border-top-width:0px;
+border-right-width:0px;
+border-bottom-width:2px;
+border-left-width:0px;
+}

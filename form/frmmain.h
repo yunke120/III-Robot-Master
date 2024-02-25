@@ -39,7 +39,7 @@ class frmMain : public QWidget
 public:
     explicit frmMain(QWidget *parent = nullptr);
     ~frmMain();
-        QStringList taskList;
+
 private:
     bool createFolder(const QString& folder);
 protected:
@@ -62,7 +62,8 @@ private:
     QQueue<QByteArray> mRecvQueue;
     QByteArray AllArray; /* 串口接收数据缓存 */
 
-
+    QStringList taskList;
+    // QList<int> taskIdList;
 
 #endif
 private:
@@ -145,6 +146,16 @@ private slots:
 
 
     void on_btnRealTimeDetect_clicked(bool checked);
+
+    void on_btnRobotLeftUp2_clicked();
+
+    void on_btnRobotUp2_clicked();
+
+    void on_btnRobotRightUp2_clicked();
+
+    void on_btnRobotLeft2_clicked();
+
+    void on_btnRobotRight2_clicked();
 
 signals:
     void sig_ImportMap(const QString &filepath);
