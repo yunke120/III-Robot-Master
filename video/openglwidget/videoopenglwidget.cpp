@@ -77,7 +77,14 @@ void VideoOpenGLWidget::updateImage()
     if (m_img.isNull()) {
         qDebug() << "Null Image";
     } else {
+
+        if(bScreenshot)
+        {
+            m_img.save(mScreenShotPath);
+            bScreenshot = false;
+        }
         update();
+
     }
 }
 
@@ -177,4 +184,10 @@ bool VideoOpenGLWidget::getEnablePython() const
 void VideoOpenGLWidget::setEnablePython(bool newEnablePython)
 {
     enablePython = newEnablePython;
+}
+
+void VideoOpenGLWidget::screenShot(const QString &filepath)
+{
+    bScreenshot = true;
+    mScreenShotPath = filepath;
 }

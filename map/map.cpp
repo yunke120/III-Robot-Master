@@ -26,11 +26,15 @@ MapWidget::MapWidget(QWidget *parent) : QGraphicsView(parent), IsMove(false)
     pen.setColor(Qt::green);
     pathItem->setPen(pen);
     pScene->addItem(pathItem);
-
+#if (0)
     goalPointList << QPointF(120,180) << QPointF(100,180) << QPointF(80,180) << QPointF(60,180) << QPointF(40,180)
     << QPointF(40,140) << QPointF(60,140) << QPointF(80,140) << QPointF(100,140) << QPointF(120,140) << QPointF(140,140) << QPointF(160,140)
     << QPointF(160,100) << QPointF(140,100) << QPointF(120,100) << QPointF(100,100) << QPointF(80,100) << QPointF(60,100) << QPointF(40,100)
     << QPointF(40,60) << QPointF(60,60) << QPointF(80,60) << QPointF(100,60) << QPointF(120,60) << QPointF(140,60) << QPointF(160,60);
+#else
+    // goalPointList << QPointF(140,100) << QPointF(85,60);
+    goalPointList << QPointF(116,90) << QPointF(67,45);
+#endif
 }
 
 MapWidget::~MapWidget()
@@ -88,12 +92,15 @@ void MapWidget::mouseReleaseEvent(QMouseEvent *event)
 void MapWidget::showMap(const QString &filepath)
 {
     QPixmap pixmap(filepath);
-    int _w = pixmap.width()-200;
-    int _h = pixmap.height()-200;
+    // int _w = pixmap.width()-200;
+    // int _h = pixmap.height()-200;
+    int _w = pixmap.width();
+    int _h = pixmap.height();
     QPixmap rpixmap = pixmap.transformed(QTransform().rotate(180));
-    pixmapItem->setPos(-_w/2,-_h/2);
+    // pixmapItem->setPos(-_w/2,-_h/2);
+    pixmapItem->setPos(0,0);
     pixmapItem->setPixmap(rpixmap);
-
+#if(0)
     robotItem = new RobotItem;
     robotItem->setPos(160,180);
     robotItem->setZValue(10);
@@ -132,6 +139,42 @@ void MapWidget::showMap(const QString &filepath)
     defaultPathItem->setPen(pen);
     pScene->addItem(defaultPathItem);
     // defaultPathItem->setPath(defaultRobotPath);
+#endif
+
+    robotItem = new RobotItem;
+    robotItem->setPos(58,114);
+    robotItem->setZValue(10);
+    robotItem->setAngle(0);
+    pScene->addItem(robotItem);
+    robotPath.moveTo(58,114);
+
+    goalItemMap.clear();
+    for(int id = 1; id <= goalPointList.size(); id++)
+    {
+        GoalItem *item = new GoalItem(id);
+        item->setZValue(1);
+        item->setPos(goalPointList.at(id-1));
+        pScene->addItem(item);
+        goalItemMap.insert(id, item);
+    }
+#if (1)
+    QPainterPath defaultRobotPath;
+    defaultRobotPath.moveTo(58,114);
+    defaultRobotPath.lineTo(116, 114);
+    defaultRobotPath.lineTo(116, 45);
+    defaultRobotPath.lineTo(67, 45);
+
+    // defaultRobotPath.closeSubpath();
+    QGraphicsPathItem *defaultPathItem = new QGraphicsPathItem(defaultRobotPath);
+    defaultPathItem->setZValue(3);
+    QPen pen = defaultPathItem->pen();
+    pen.setStyle(Qt::DotLine);
+    pen.setColor(QColor(151, 69, 183, 155));
+    // pen.setBrush(Qt::NoBrush);
+    defaultPathItem->setPen(pen);
+    pScene->addItem(defaultPathItem);
+    // defaultPathItem->setPath(defaultRobotPath);
+#endif
 }
 
 void MapWidget::slotSetRobotPose(int x, int y, int w)

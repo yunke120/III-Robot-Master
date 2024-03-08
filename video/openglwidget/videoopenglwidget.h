@@ -35,6 +35,8 @@ public:
     bool getEnablePython() const;
     void setEnablePython(bool newEnablePython);
 
+    void screenShot(const QString &filepath);
+
 private:
     QImage m_img;
     OpencvThread *pVideoThread;
@@ -43,6 +45,9 @@ private:
 
     bool enablePython; /* 启用Python算法 */
     bool enableDetect; /* 启用算法检测 */
+
+    bool bScreenshot = false;
+    QString mScreenShotPath;
 signals:
 
     void enableDetectChanged();

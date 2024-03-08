@@ -65,6 +65,13 @@ private:
     QStringList taskList;
     // QList<int> taskIdList;
 
+    QSerialPort *pTestSerial;
+    quint32 serialRxCount = 0;
+    quint32 serialTxCount = 0;
+    QTimer *pSerialTiming;
+
+    bool bScreenShot = false;
+
 #endif
 private:
     //根据QSS样式获取对应颜色值
@@ -108,9 +115,12 @@ private slots:
     void on_btnMenu_Max_clicked();
     void on_btnMenu_Close_clicked();
 #if INIT
+    void reorderFrameData(QByteArray &array);
     void slotSerialReadyRead();
     void slotDataTimerOut(void);
     void slotConfigChange(int index);
+    void slotTestSerialReadyRead();
+    void slotSerialTimingTimeout();
     void on_btnRobotUp_clicked();
     void on_btnRobotDown_clicked();
     void on_btnRobotLeft_clicked();
@@ -156,6 +166,28 @@ private slots:
     void on_btnRobotLeft2_clicked();
 
     void on_btnRobotRight2_clicked();
+
+    void on_btnRobotLeftDown2_clicked();
+
+    void on_btnRobotDown2_clicked();
+
+    void on_btnRobotRightDown2_clicked();
+
+    void on_btnRealTimeDetect_clicked();
+
+    void on_btnOpenSerialPort_clicked();
+
+    void on_btnSerialSend_1_clicked();
+
+    void on_btnRefreshPort_2_clicked();
+
+    void on_btnClearSerialRecv_clicked();
+
+    void on_btnClearTxCount_clicked();
+
+    void on_btnClearRxCount_clicked();
+
+    void on_tBtnScreenShot_clicked();
 
 signals:
     void sig_ImportMap(const QString &filepath);

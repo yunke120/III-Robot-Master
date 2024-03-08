@@ -8,6 +8,7 @@
 #include <QTime>
 #include <QAudioDevice>
 #include <QMediaDevices>
+
 frmMain::frmMain(QWidget *parent) : QWidget(parent), ui(new Ui::frmMain)
 {
     ui->setupUi(this);
@@ -360,7 +361,9 @@ void frmMain::initStyle()
     this->darkBgColor = panelColor;
     this->normalTextColor = textColor;
     this->darkTextColor = normalTextColor;
-
+    QFont font = ui->labelPose->font();
+    font.setPointSize(7);
+    ui->labelPose->setFont(font);
 }
 
 void frmMain::buttonClick()
@@ -643,6 +646,23 @@ void frmMain::initMap()
     connect(ui->hRadSlider2, &QSlider::valueChanged, [this](int value){
         ui->labelRad2->setText(QString("%1rad/s").arg(value/100.0, 2));
     });
+
+    connect(ui->hSliderVelocity, &QSlider::valueChanged, [this](int value){
+        ui->labelVel->setText(QString("%1m/s").arg(value/100.0, 2));
+
+    });
+    connect(ui->hSliderVelocity, &QSlider::sliderReleased, [this](){
+
+        union UInt16Union data;
+        data.value = ui->hSliderVelocity->value() * 10;
+
+        unsigned char userdata[2] = {data.parts.lowByte, data.parts.highByte};
+        _sendCommand(Robot, RobotVelocity, userdata, 2);
+
+    });
+    connect(ui->hSliderRad, &QSlider::valueChanged, [this](int value){
+        ui->labelRad->setText(QString("%1rad/s").arg(value/100.0, 2));
+    });
 }
 
 void frmMain::initReport()
@@ -691,18 +711,20 @@ void frmMain::initReport()
 void frmMain::initHelp()
 {
     ui->labelHelpDoc->setTextFormat(Qt::MarkdownText);
-    QFile helpFile("./help.md");
+    ui->labelHelpDoc->setWordWrap(true);
+    QFile helpFile("./HELP.md");
 
     if(helpFile.open(QIODevice::ReadOnly))
         ui->labelHelpDoc->setText(helpFile.readAll());
     helpFile.close();
 
-    ui->labelFAQ->setTextFormat(Qt::MarkdownText);
-    QFile faqFile("./FAQ.md");
+    // ui->labelFAQ->setTextFormat(Qt::MarkdownText);
+    // ui->labelFAQ->setWordWrap(true);
+    // QFile faqFile("./FAQ.md");
 
-    if(faqFile.open(QIODevice::ReadOnly))
-        ui->labelFAQ->setText(faqFile.readAll());
-    faqFile.close();
+    // if(faqFile.open(QIODevice::ReadOnly))
+    //     ui->labelFAQ->setText(faqFile.readAll());
+    // faqFile.close();
 }
 #endif
 void frmMain::on_btnMenu_Min_clicked()
@@ -737,16 +759,32 @@ void frmMain::on_btnOpenVideo_clicked()
         ui->btnOpenVideo->setText("关闭视频");
         QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
         QString videoaddr = settings.value("Config2/videoaddr").toString();
-        //        ui->widgetVideo->setAddr(videoaddr); // 网络流
+        qDebug()<< videoaddr;
+        ui->widgetVideo->setAddr(videoaddr); // 网络流
         //        ui->widgetVideo->setAddr("rtsp://192.168.1.210/H264LiveStream"); // 本地视频文件
         //        ui->widgetVideo->setAddr("rtsp://192.168.2.119/554"); // 本地视频文件
-        ui->widgetVideo->setAddr(0); // 本地摄像头
-        ui->widgetVideo->setEnablePython(true);
+        // ui->widgetVideo->setAddr(0); // 本地摄像头
+        ui->widgetVideo->setEnablePython(false);
         ui->widgetVideo->open();
     } else {
         ui->btnOpenVideo->setText("打开视频");
         ui->widgetVideo->close();
     }
+}
+
+/**
+ * @brief 对接收到的12个字节进行重新排序，主要解决接收乱序的问题
+ *
+ * @param array 串口接收的一帧数据
+ */
+void frmMain::reorderFrameData(QByteArray &array)
+{
+    int frameHead = array.indexOf(0xAA);
+    if(frameHead == 0 && array.at(11) == 0xDD) return;
+
+        QByteArray temp = array.mid(0, frameHead);
+        array.remove(0, frameHead);
+        array.append(temp);
 }
 
 /**
@@ -762,14 +800,15 @@ void frmMain::slotSerialReadyRead()
     int i;
     for (i = 0; i < AllArray.size() / 12; i++) {
         array = AllArray.mid(12 * i, 12);
-        //        reorderFrameData(array);
+        reorderFrameData(array);
         mRecvQueue.enqueue(array);
-#if (0)
+#if (1)
         QString str;
         for (int i = 0; i < 12; i++) {
             str += QString("%1 ").arg((unsigned char) array.at(i), 2, 16, QChar('0'));
         }
-        ui->tELog->append(str);
+        // ui->tELog->append(str);
+        qDebug() << str;
 #endif
     }
     AllArray.remove(0, 12 * i);
@@ -778,77 +817,67 @@ void frmMain::slotSerialReadyRead()
 
 void frmMain::slotDataTimerOut()
 {
-//    if(mRecvQueue.isEmpty()) return;
+   if(mRecvQueue.isEmpty()) return;
 
-//    QByteArray array = mRecvQueue.dequeue();
+   QByteArray array = mRecvQueue.dequeue();
 
-//    if(array.size() == 12)
-//    {
-//        if(static_cast<unsigned char>(array.at(0)) == FrameHeader && static_cast<unsigned char>(array.at(11)) == FrameTail)
-//        {
-//            switch (eDEVICE(array.at(1)))
-//            {
-//            case Robot:
-//                if(static_cast<unsigned char>(array.at(2)) == eRobot::RobotVelocity)
-//                {
-//                    union UInt16Union data;
-//                    data.parts.lowByte = static_cast<unsigned char>(array.at(4));
-//                    data.parts.highByte = static_cast<unsigned char>(array.at(5));
-//                    qDebug() << "v: " + QString::number(data.value/1000.0);
-//                    qreal value = data.value / 10.0;
-//                    ui->dashboard->setValue(value);
-//                }
-//                else {
-//                    qDebug("error command.");
-//                }
-//                break;
-//            case Battery:
-//                if(static_cast<unsigned char>(array.at(2)) == eBattery::GetVoltage)
-//                {
-//                    union UInt16Union data;
-//                    data.parts.lowByte = static_cast<unsigned char>(array.at(4));
-//                    data.parts.highByte = static_cast<unsigned char>(array.at(5));
+   if(array.size() == 12)
+   {
+       if(static_cast<unsigned char>(array.at(0)) == FrameHeader && static_cast<unsigned char>(array.at(11)) == FrameTail)
+       {
+           switch (eDEVICE(array.at(1)))
+           {
+           case Robot:
+               if(static_cast<unsigned char>(array.at(2)) == eRobot::RobotVelocity)
+               {
+                   union UInt16Union data;
+                   data.parts.lowByte = static_cast<unsigned char>(array.at(4));
+                   data.parts.highByte = static_cast<unsigned char>(array.at(5));
+                   // qDebug() << "v: " + QString::number(data.value/1000.0);
+                   qreal value = data.value / 10.0;
+                   // qDebug() << "veocity = " << value;
+                   ui->VelWidget->setValue(value);
+               }
+               else if(static_cast<unsigned char>(array.at(2)) == eRobot::HandShake)
+               {
+                   ui->tBConnect->setText("在线");
+                   ui->tBConnect->setIcon(QIcon(":/image/connect.png"));
+               }
+               else {
+                   qDebug("error command 1.");
+               }
+               break;
+           case Battery:
+               if(static_cast<unsigned char>(array.at(2)) == eBattery::GetVoltage)
+               {
+                   union UInt16Union data;
+                   data.parts.lowByte = static_cast<unsigned char>(array.at(4));
+                   data.parts.highByte = static_cast<unsigned char>(array.at(5));
 
-//                    ui->battery->setValue(data.value/1000.0);
-//                    ui->labelBattery->setText(QString("%1V").arg(data.value/1000.0));
-//                    qDebug() << "bat: " + QString::number(data.value/1000.0);
-//                }
-//                else {
-//                    qDebug("error command.");
-//                }
-//                break;
-//            case Sensor:
-//                if(static_cast<unsigned char>(array.at(2)) == eSensor::GetMQ2)
-//                {
-//                    union UInt16Union data;
-//                    data.parts.lowByte = static_cast<unsigned char>(array.at(4));
-//                    data.parts.highByte = static_cast<unsigned char>(array.at(5));
+                   qDebug() << "bat: " + QString::number(data.value/1000.0);
+                   ui->tBBattery->setText(QString("%1V").arg(data.value/1000.0, 3));
+               }
+               else {
+                   qDebug("error command 2.");
+               }
+               break;
+           case Sensor:
 
-//                    qDebug() << "mq2: " + QString::number(data.value/1000.0);
-//                    if(data.value < 1100) ui->labelMQ2->setText("低");
-//                    else if(data.value < 2200) ui->labelMQ2->setText("中");
-//                    else ui->labelMQ2->setText("高");
+               break;
 
-
-//                }
-//                else {
-//                    qDebug("error command.");
-//                }
-//                break;
-
-//            default:
-//                qDebug("no message.");
-//                break;
-//            }
-//        }
-//        else {
-//            qDebug( "error header or tail.");
-//        }
-//    }
-//    else
-//    {
-//        qDebug("error len.");
-//    }
+           default:
+               qDebug("no message.");
+               break;
+           }
+       }
+       else {
+           qDebug( "error header or tail.");
+       }
+   }
+   else
+   {
+       qDebug("error len.");
+   }
 }
 
 void frmMain::slotConfigChange(int index)
@@ -946,7 +975,7 @@ void frmMain::on_btnRobotRightDown_clicked()
  */
 void frmMain::on_btnRobotStop_clicked()
 {
-    _sendCommand(Robot, Robot_Backward);
+    _sendCommand(Robot, Robot_Stop);
 }
 
 // void frmMain::on_btnRobotAccelerate_clicked()
@@ -1116,6 +1145,8 @@ void frmMain::on_btnOpenSerial_clicked()
         pStatusWidget->start();
 
         LogManager::instance().getLogger()->info("打开串口成功");
+        ui->tBConnect->setText("在线");
+        ui->tBConnect->setIcon(QIcon(":/image/connect.png"));
     } else {
         if (!pSerial->isOpen())
             return;
@@ -1124,6 +1155,8 @@ void frmMain::on_btnOpenSerial_clicked()
         if (pDataTimer->isActive())
             pDataTimer->stop();
         LogManager::instance().getLogger()->info("关闭串口");
+        ui->tBConnect->setText("离线");
+        ui->tBConnect->setIcon(QIcon(":/image/disconnect.png"));
     }
 }
 
@@ -1288,16 +1321,7 @@ void frmMain::on_btnExportReport_clicked()
 
 void frmMain::on_btnRealTimeDetect_clicked(bool checked)
 {
-    if(checked)
-    {
-        ui->btnRealTimeDetect->setText("开启实时检测");
-        ui->btnRealTimeDetect->setIcon(QIcon(":/image/switch-on.png"));
-    }
-    else
-    {
-        ui->btnRealTimeDetect->setText("关闭实时检测");
-        ui->btnRealTimeDetect->setIcon(QIcon(":/image/switch-off.png"));
-    }
+
 }
 
 
@@ -1380,5 +1404,231 @@ void frmMain::on_btnRobotRight2_clicked()
 {
     emit sigSetRobotPose(120,140,0); //9
     emit sigSetGoalStatus(10, GoalItem::GOALTYPE::Done);
+}
+
+
+void frmMain::on_btnRobotLeftDown2_clicked()
+{
+    for(int i = 0; i<58;i++)
+    {
+        std::random_device rd;  //用于获取种子数据
+        std::mt19937 gen(rd()); //使用Mersenne Twister算法的随机数生成器
+        std::uniform_int_distribution<> dis(114, 115); //定义一个区间，生成这个区间内的随机数
+
+        int randomValue = dis(gen); //生成随机数
+        emit sigSetRobotPose(58+i,randomValue,0); //1
+    }
+}
+
+void frmMain::on_btnRobotDown2_clicked()
+{
+    for(int i = 0; i<69;i++)
+    {
+        std::random_device rd;  //用于获取种子数据
+        std::mt19937 gen(rd()); //使用Mersenne Twister算法的随机数生成器
+        std::uniform_int_distribution<> dis(116, 117); //定义一个区间，生成这个区间内的随机数
+
+        int randomValue = dis(gen); //生成随机数
+        emit sigSetRobotPose(randomValue,114-i,270); //1
+    }
+}
+
+
+void frmMain::on_btnRobotRightDown2_clicked()
+{
+    for(int i = 0; i<49;i++)
+    {
+        std::random_device rd;  //用于获取种子数据
+        std::mt19937 gen(rd()); //使用Mersenne Twister算法的随机数生成器
+        std::uniform_int_distribution<> dis(44.5, 45.5); //定义一个区间，生成这个区间内的随机数
+
+        int randomValue = dis(gen); //生成随机数
+        emit sigSetRobotPose(116-i,randomValue,180); //1
+    }
+    ui->labelPose->setText("当前位姿：(67,45,180)");
+    ui->VelWidget->setValue(17);
+}
+
+
+void frmMain::on_btnRealTimeDetect_clicked()
+{
+    static bool checked = true;
+    checked = !checked;
+
+    if(checked)
+    {
+        ui->btnRealTimeDetect->setText("开启实时检测");
+        ui->btnRealTimeDetect->setIcon(QIcon(":/image/switch-on.png"));
+    }
+    else
+    {
+        ui->btnRealTimeDetect->setText("关闭实时检测");
+        ui->btnRealTimeDetect->setIcon(QIcon(":/image/switch-off.png"));
+    }
+    ui->widgetVideo->setEnableDetect(checked);
+}
+
+
+void frmMain::on_btnOpenSerialPort_clicked()
+{
+    if (ui->btnOpenSerialPort->text() == "打开串口") {
+        pTestSerial = new QSerialPort(this);
+        pTestSerial->setBaudRate(QSerialPort::Baud115200);
+        pTestSerial->setDataBits(QSerialPort::Data8);
+        pTestSerial->setStopBits(QSerialPort::OneStop);
+        pTestSerial->setParity(QSerialPort::NoParity);
+        pTestSerial->setFlowControl(QSerialPort::NoFlowControl);
+        connect(pTestSerial, &QSerialPort::readyRead, this, &frmMain::slotTestSerialReadyRead);
+
+        QString port = ui->cBoxPortNumber->currentText();
+        pTestSerial->setPortName(port);
+        if (!pTestSerial->open(QIODevice::ReadWrite)) {
+            pStatusWidget->setShowMessage("警告", pSerial->errorString());
+            pStatusWidget->start();
+            return;
+        }
+        ui->btnOpenSerialPort->setText("关闭串口");
+        connect(ui->cBoxSerialTimer, &QCheckBox::stateChanged, [this](int state){
+            if(state)
+            {
+                bool ok;
+                pSerialTiming = new QTimer;
+                QString timStr = ui->SerialPortTiming->text();
+                int tim = timStr.toInt(&ok, 10);
+                if(ok)
+                {
+                    connect(pSerialTiming, &QTimer::timeout, this, &frmMain::slotSerialTimingTimeout);
+                    pSerialTiming->setInterval(timStr.toInt());
+                    pSerialTiming->start();
+                }
+                else
+                {
+                    pStatusWidget->setShowMessage("警告", "定时时间必须为整数!");
+                    pStatusWidget->start();
+                }
+
+            }
+            else
+            {
+                pSerialTiming->stop();
+                disconnect(pSerialTiming, &QTimer::timeout, this, &frmMain::slotSerialTimingTimeout);
+                if(pSerialTiming != nullptr)
+                {
+                    delete pSerialTiming;
+                    pSerialTiming = nullptr;
+                }
+
+            }
+        });
+    } else {
+        if (!pTestSerial->isOpen())
+            return;
+        pTestSerial->close();
+        ui->btnOpenSerialPort->setText("打开串口");
+    }
+}
+
+void frmMain::slotSerialTimingTimeout()
+{
+    on_btnSerialSend_1_clicked();
+}
+
+void frmMain::on_btnSerialSend_1_clicked()
+{
+    QString text = ui->lEditSerialSend_1->text();
+    QByteArray data;
+    if(ui->cBoxHexSend->isChecked())
+    {
+        QStringList list = text.split(" ");
+        for(int i = 0; i < list.size(); i++)
+        {
+            bool ok;
+            int hex = list[i].toInt(&ok, 16);
+            if(ok)
+            {
+                data.append(hex);
+            }
+        }
+    }
+    else
+    {
+        data = text.toLocal8Bit();
+    }
+    serialTxCount += data.size();
+    ui->SerialTxCount->setText(QString::number(serialTxCount));
+    pTestSerial->write(data);
+
+    if(ui->cBoxTimestamp->isChecked())
+    {
+        QString timeStr = QTime::currentTime().toString("HH:mm:ss:zzz");
+        text = "<font color=\"#FF00EB\">" + timeStr + " &gt;&gt; </font>" + text;
+    }
+    if(ui->cBoxShowSendData->isChecked())
+    {
+        ui->tEditSerialRecv->append(text);
+    }
+    QThread::msleep(5);
+}
+
+void frmMain::slotTestSerialReadyRead()
+{
+    QByteArray array = pTestSerial->readAll();
+    QString rStr;
+    if(ui->cBoxHexShow->isChecked())
+    {
+        rStr = array.toHex(' ').toUpper();
+    }
+    else
+    {
+        rStr = QString(array);
+    }
+
+    if(ui->cBoxTimestamp->isChecked())
+    {
+        QString timeStr1 = QTime::currentTime().toString("HH:mm:ss:zzz");
+
+        rStr = "<font color=\"#FF8100\">" + timeStr1 + " &lt;&lt; </font>" + rStr;
+    }
+
+    ui->tEditSerialRecv->append(rStr);
+    serialRxCount += array.size();
+    ui->SerialRxCount->setText(QString::number(serialRxCount));
+}
+
+void frmMain::on_btnRefreshPort_2_clicked()
+{
+    ui->cBoxPortNumber->clear();
+    foreach(const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) /* 初始化串口列表 */
+    {
+        ui->cBoxPortNumber->addItem(info.portName());
+    }
+}
+
+void frmMain::on_btnClearSerialRecv_clicked()
+{
+    ui->tEditSerialRecv->clear();
+}
+
+void frmMain::on_btnClearTxCount_clicked()
+{
+    serialTxCount = 0;
+    ui->SerialTxCount->setText(QString::number(serialTxCount));
+}
+
+
+void frmMain::on_btnClearRxCount_clicked()
+{
+    serialRxCount = 0;
+    ui->SerialRxCount->setText(QString::number(serialRxCount));
+}
+
+void frmMain::on_tBtnScreenShot_clicked()
+{
+    QString timeStr1 = QTime::currentTime().toString("HH_mm_ss_zzz");
+    QSettings settings(CONFIG_FILEPATH, QSettings::IniFormat);
+    QString imageSavePath = settings.value("Config1/imageSavePath").toString();
+    QString path = imageSavePath + timeStr1 + ".jpg";
+    qDebug() << path;
+    ui->widgetVideo->screenShot(path);
 }
 

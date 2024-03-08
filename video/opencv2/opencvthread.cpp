@@ -51,6 +51,7 @@ void OpencvThread::run()
         } else {
             timeout = 3;
             videoMutex.lock();
+            // if(videoFrameQueue.size() >=3) videoFrameQueue.clear();
             videoFrameQueue.enqueue(frame);
             //            qDebug() << "opencv: " << videoFrameQueue.size();
             videoMutex.unlock();
