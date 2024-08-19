@@ -10,3 +10,4 @@ msvc-build/
 !log4qt.dll
 *.zip
 video/opencv2/bin/
+build/
